@@ -4,22 +4,24 @@ import Iter "mo:base/Iter";
 import HashMap "mo:base/HashMap";
 import Principal "mo:base/Principal";
 
-import Book "book";
+import BalanceBook "balance_book";
 import Exchange "exchange";
 import T "types";
 
 actor class Dex() = this {
+  // Stable variable to save sell orders at time of upgrade
   stable var orders_stable : [T.Order] = [];
+  //
   private stable var book_stable : [var (Principal, [(T.Token, Nat)])] = [var];
 
   // 売り注文のIDを管理する変数
   stable var last_id : Nat32 = 0;
 
   // ユーザーの残高を管理するモジュール
-  private var book = Book.Book();
+  private var balance_book = BalanceBook.BalanceBook();
 
   // 売り注文を管理するモジュール
-  private var exchange = Exchange.Exchange(book);
+  private var exchange = Exchange.Exchange(balance_book);
 
   // ===== DEPOSIT / WITHDRAW =====
   public shared (msg) func deposit(token : T.Token) : async T.DepositReceipt {
@@ -51,8 +53,8 @@ actor class Dex() = this {
       case _ {};
     };
 
-    // `book`にユーザーとトークンを追加
-    book.addTokens(msg.caller, token, balance - dip_fee);
+    // `balance_book`にユーザーとトークンを追加
+    balance_book.addToken(msg.caller, token, balance - dip_fee);
 
     return #Ok(balance - dip_fee);
   };
@@ -74,8 +76,8 @@ actor class Dex() = this {
 
     // DIPのfeeを取得
     let dip_fee = await fetch_dif_fee(token);
-    // `book`から引き出した分のトークンデータを削除
-    switch (book.removeTokens(msg.caller, token, amount + dip_fee)) {
+    // `balance_book`から引き出した分のトークンデータを削除
+    switch (balance_book.removeToken(msg.caller, token, amount + dip_fee)) {
       case (null) {
         return #Err(#BalanceLow);
       };
@@ -87,7 +89,7 @@ actor class Dex() = this {
       if (msg.caller == order.owner and token == order.from) {
         // `DEX`内のユーザー預け入れ残高とオーダーのfromAmountと比較
 
-        if (book.hasEnoughBalance(msg.caller, token, order.fromAmount) == false) {
+        if (balance_book.hasEnoughBalance(msg.caller, token, order.fromAmount) == false) {
           switch (exchange.cancelOrder(order.id)) {
             // キャンセル成功
             case (?cancel_order) {
@@ -123,7 +125,7 @@ actor class Dex() = this {
     };
 
     // ユーザーの残高が足りるかチェック
-    if (book.hasEnoughBalance(msg.caller, from, fromAmount) == false) {
+    if (balance_book.hasEnoughBalance(msg.caller, from, fromAmount) == false) {
       Debug.print("Not enough balance for user " # Principal.toText(msg.caller) # " in token " # Principal.toText(from));
       return (#Err(#InvalidOrder));
     };
@@ -192,7 +194,7 @@ actor class Dex() = this {
   // ===== DEX STATE FUNCTIONS =====
   // ユーザーがDEXに預けたトークンの残高を取得する
   public shared query (msg) func getBalances() : async [T.Balance] {
-    switch (book.get(msg.caller)) {
+    switch (balance_book.get(msg.caller)) {
       case (?token_balance) {
         // 配列の値の順番を保ったまま、関数で各値を変換する(`(Principal, Nat)` -> `Balace`)。
         Array.map<(Principal, Nat), T.Balance>(
@@ -213,7 +215,7 @@ actor class Dex() = this {
   };
 
   public shared query (msg) func getBalance(token : T.Token) : async Nat {
-    switch (book.get(msg.caller)) {
+    switch (balance_book.get(msg.caller)) {
       case (?token_balances) {
         switch (token_balances.get(token)) {
           case (?amount) {
@@ -233,9 +235,9 @@ actor class Dex() = this {
   // ===== UPGRADE METHODS =====
   // キャニスターのアップグレード前に、ハッシュマップを安定したメモリに保存し、更新に耐えられるようにする。
   system func preupgrade() {
-    book_stable := Array.init(book.size(), (Principal.fromText("aaaaa-aa"), []));
+    book_stable := Array.init(balance_book.size(), (Principal.fromText("aaaaa-aa"), []));
     var i = 0;
-    for ((x, y) in book.entries()) {
+    for ((x, y) in balance_book.entries()) {
       book_stable[i] := (x, Iter.toArray(y.entries()));
       i += 1;
     };
@@ -246,10 +248,10 @@ actor class Dex() = this {
 
   // キャニスターのアップグレード後、ブック・マップは安定した配列から再構築されます。
   system func postupgrade() {
-    // Reload book.
+    // Reload balance_book.
     for ((key : Principal, value : [(T.Token, Nat)]) in book_stable.vals()) {
       let tmp : HashMap.HashMap<T.Token, Nat> = HashMap.fromIter<T.Token, Nat>(Iter.fromArray<(T.Token, Nat)>(value), 10, Principal.equal, Principal.hash);
-      book.put(key, tmp);
+      balance_book.put(key, tmp);
     };
 
     // Reload order

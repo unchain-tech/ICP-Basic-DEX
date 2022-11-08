@@ -5,35 +5,35 @@ import HashMap "mo:base/HashMap";
 import T "types";
 
 module {
-    public class Book() {
+    public class BalanceBook() {
 
         // ユーザーとトークンの種類・量をマッピング
         // 0 : initCapacity
         // Principal.equal : keyEq
         // Principal.hash : keyHash
-        var book = HashMap.HashMap<Principal, HashMap.HashMap<T.Token, Nat>>(0, Principal.equal, Principal.hash);
+        var balance_book = HashMap.HashMap<Principal, HashMap.HashMap<T.Token, Nat>>(0, Principal.equal, Principal.hash);
 
         // Principal(`user`)に紐づいたトークンと残高を取得
         public func get(user : Principal) : ?HashMap.HashMap<T.Token, Nat> {
-            return book.get(user);
+            return balance_book.get(user);
         };
 
         public func put(user : Principal, userBalances : HashMap.HashMap<T.Token, Nat>) {
-            book.put(user, userBalances);
+            balance_book.put(user, userBalances);
         };
 
         public func entries() : Iter.Iter<(Principal, HashMap.HashMap<T.Token, Nat>)> {
-            book.entries();
+            balance_book.entries();
         };
 
         public func size() : Nat {
-            book.size();
+            balance_book.size();
         };
 
         // ユーザーの預け入れを記録する
-        public func addTokens(user : Principal, token : T.Token, amount : Nat) {
+        public func addToken(user : Principal, token : T.Token, amount : Nat) {
             // ユーザーのデータがあるかどうか
-            switch (book.get(user)) {
+            switch (balance_book.get(user)) {
                 // ユーザーデータあり
                 case (?token_balance) {
                     // トークンが記録されているかどうか
@@ -52,15 +52,15 @@ module {
                 case (null) {
                     var new_data = HashMap.HashMap<Principal, Nat>(0, Principal.equal, Principal.hash);
                     new_data.put(token, amount);
-                    book.put(user, new_data);
+                    balance_book.put(user, new_data);
                 };
             };
         };
 
         // DEXからトークンを引き出す際に呼び出される関数。更新された残高を返す。
-        public func removeTokens(user : Principal, token : T.Token, amount : Nat) : ?Nat {
+        public func removeToken(user : Principal, token : T.Token, amount : Nat) : ?Nat {
             // ユーザーのデータがあるかどうか
-            switch (book.get(user)) {
+            switch (balance_book.get(user)) {
                 // ユーザーデータあり
                 case (?token_balance) {
                     // トークンが記録されているかどうか
@@ -94,10 +94,10 @@ module {
             };
         };
 
-        // ユーザーが`book`内に`amount`分のトークンを保有しているかをチェックする
+        // ユーザーが`balance_book`内に`amount`分のトークンを保有しているかをチェックする
         public func hasEnoughBalance(user : Principal, token : T.Token, amount : Nat) : Bool {
             // ユーザーデータがあるかどうか
-            switch (book.get(user)) {
+            switch (balance_book.get(user)) {
                 // ユーザーデータあり
                 case (?token_balance) {
                     // トークンが記録されているかどうか
