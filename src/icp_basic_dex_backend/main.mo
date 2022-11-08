@@ -1,6 +1,7 @@
 import Array "mo:base/Array";
 import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
+import HashMap "mo:base/HashMap";
 import Principal "mo:base/Principal";
 
 import Book "book";
@@ -8,8 +9,11 @@ import Exchange "exchange";
 import T "types";
 
 actor class Dex() = this {
+  stable var orders_stable : [T.Order] = [];
+  private stable var book_stable : [var (Principal, [(T.Token, Nat)])] = [var];
+
   // 売り注文のIDを管理する変数
-  var last_id : Nat32 = 0;
+  stable var last_id : Nat32 = 0;
 
   // ユーザーの残高を管理するモジュール
   private var book = Book.Book();
@@ -78,7 +82,7 @@ actor class Dex() = this {
       case _ {};
     };
 
-    // TODO: ユーザーが登録したオーダーを削除
+    // ユーザーが登録したオーダーを削除
     for (order in exchange.getOrders().vals()) {
       if (msg.caller == order.owner and token == order.from) {
         // `DEX`内のユーザー預け入れ残高とオーダーのfromAmountと比較
@@ -111,13 +115,8 @@ actor class Dex() = this {
     toAmount : Nat,
   ) : async T.PlaceOrderReceipt {
 
-    // TODO: check `create_trading_pair()`
-
     // ユーザーが`from`トークンで別の売り注文を出していないか確認
     for (order in exchange.getOrders().vals()) {
-      // Debug.print(
-      //   "check user :" # Principal.toText(msg.caller) # " vs " # Principal.toText(order.owner) # "\ncheck token :" # Principal.toText(from) # " vs " # Principal.toText(order.from),
-      // );
       if (msg.caller == order.owner and from == order.from) {
         return (#Err(#OrderBookFull));
       };
@@ -229,5 +228,37 @@ actor class Dex() = this {
         return 0;
       };
     };
+  };
+
+  // ===== UPGRADE METHODS =====
+  // キャニスターのアップグレード前に、ハッシュマップを安定したメモリに保存し、更新に耐えられるようにする。
+  system func preupgrade() {
+    book_stable := Array.init(book.size(), (Principal.fromText("aaaaa-aa"), []));
+    var i = 0;
+    for ((x, y) in book.entries()) {
+      book_stable[i] := (x, Iter.toArray(y.entries()));
+      i += 1;
+    };
+
+    // book内で管理しているオーダーブックをstableに保存
+    orders_stable := exchange.getOrders();
+  };
+
+  // キャニスターのアップグレード後、ブック・マップは安定した配列から再構築されます。
+  system func postupgrade() {
+    // Reload book.
+    for ((key : Principal, value : [(T.Token, Nat)]) in book_stable.vals()) {
+      let tmp : HashMap.HashMap<T.Token, Nat> = HashMap.fromIter<T.Token, Nat>(Iter.fromArray<(T.Token, Nat)>(value), 10, Principal.equal, Principal.hash);
+      book.put(key, tmp);
+    };
+
+    // Reload order
+    for (order in orders_stable.vals()) {
+      exchange.addOrder(order);
+    };
+
+    // Clean stable memory.
+    book_stable := [var];
+    orders_stable := [];
   };
 };

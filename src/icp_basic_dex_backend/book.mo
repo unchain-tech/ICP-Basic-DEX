@@ -1,3 +1,4 @@
+import Iter "mo:base/Iter";
 import Principal "mo:base/Principal";
 import HashMap "mo:base/HashMap";
 
@@ -15,6 +16,18 @@ module {
         // Principal(`user`)に紐づいたトークンと残高を取得
         public func get(user : Principal) : ?HashMap.HashMap<T.Token, Nat> {
             return book.get(user);
+        };
+
+        public func put(user : Principal, userBalances : HashMap.HashMap<T.Token, Nat>) {
+            book.put(user, userBalances);
+        };
+
+        public func entries() : Iter.Iter<(Principal, HashMap.HashMap<T.Token, Nat>)> {
+            book.entries();
+        };
+
+        public func size() : Nat {
+            book.size();
         };
 
         // ユーザーの預け入れを記録する
