@@ -9,7 +9,7 @@ module {
     // Internal types
     type TradingPair = (T.Token, T.Token);
 
-    public class Exchange(/*trading_pair : TradingPair, */book : Book.Book) {
+    public class Exchange(book : Book.Book) {
 
         // 売り注文のIDと注文内容をマッピング
         // 0 : initCapacity
@@ -48,7 +48,6 @@ module {
         func detectMatch(new_order : T.Order) {
             // 全ての売り注文から、from<->toが一致するものを探す
             for (order in orders.vals()) {
-                Debug.print("\norder ID: " # debug_show (order.id)); // TODO: Delete
                 if (
                     order.id != new_order.id and order.from == new_order.to and order.to == new_order.from and order.fromAmount == new_order.toAmount and order.toAmount == new_order.fromAmount,
                 ) {
@@ -58,10 +57,6 @@ module {
         };
 
         func processTrade(order_x : T.Order, order_y : T.Order) {
-            // TODO: Calculate `cost`
-
-            // TODO: Update order with remaining tokens
-
             // 取引内容でXのトークン残高を更新
             let _removed_x = book.removeTokens(order_x.owner, order_x.from, order_x.fromAmount);
             book.addTokens(order_x.owner, order_x.to, order_x.toAmount);
