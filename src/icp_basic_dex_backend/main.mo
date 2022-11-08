@@ -85,6 +85,7 @@ actor class Dex() = this {
     for (order in exchange.getOrders().vals()) {
       if (msg.caller == order.owner and token == order.from) {
         // `DEX`内のユーザー預け入れ残高とオーダーのfromAmountと比較
+
         if (book.hasEnoughBalance(msg.caller, token, order.fromAmount) == false) {
           switch (exchange.cancelOrder(order.id)) {
             // キャンセル成功
@@ -176,7 +177,7 @@ actor class Dex() = this {
     };
   };
 
-  public func getOrders() : async ([T.Order]) {
+  public query func getOrders() : async ([T.Order]) {
     return (exchange.getOrders());
   };
 
