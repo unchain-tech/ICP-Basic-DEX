@@ -34,11 +34,10 @@ actor class Dex() = this {
     let balance = await dip20.allowance(msg.caller, Principal.fromActor(this));
 
     // DEXへユーザーの資金を送る
-    let token_reciept = if (balance > dip_fee) {
-      await dip20.transferFrom(msg.caller, Principal.fromActor(this), balance - dip_fee);
-    } else {
+    if (balance <= dip_fee) {
       return #Err(#BalanceLow);
     };
+    let token_reciept = await dip20.transferFrom(msg.caller, Principal.fromActor(this), balance - dip_fee);
 
     // `transferFrom()`の結果をチェック
     switch token_reciept {
@@ -48,10 +47,8 @@ actor class Dex() = this {
       case _ {};
     };
 
-    let available = balance - dip_fee;
-
     // `book`にユーザーとトークンを追加
-    book.addTokens(msg.caller, token, available);
+    book.addTokens(msg.caller, token, balance - dip_fee);
 
     return #Ok(balance - dip_fee);
   };
