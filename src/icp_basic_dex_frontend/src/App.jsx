@@ -9,14 +9,14 @@ import { canisterId as DEXCanisterId }
   from '../../declarations/icp_basic_dex_backend';
 import { idlFactory as DEXidlFactory }
   from '../../declarations/icp_basic_dex_backend/icp_basic_dex_backend.did.js';
-import { canisterId as HogeDIP20canisterId }
-  from '../../declarations/HogeDIP20';
-import { idlFactory as HogeidlFactory }
-  from '../../declarations/HogeDIP20/HogeDIP20.did.js';
-import { canisterId as PiyoDIP20canisterId }
-  from '../../declarations/PiyoDIP20';
-import { idlFactory as PiyoidlFactory }
-  from '../../declarations/PiyoDIP20/PiyoDIP20.did.js';
+import { canisterId as GoldDIP20canisterId }
+  from '../../declarations/GoldDIP20';
+import { idlFactory as GoldIdlFactory }
+  from '../../declarations/GoldDIP20/GoldDIP20.did.js';
+import { canisterId as SilverDIP20canisterId }
+  from '../../declarations/SilverDIP20';
+import { idlFactory as SilverIdlFactory }
+  from '../../declarations/SilverDIP20/SilverDIP20.did.js';
 
 import { Header } from './components/Header';
 import { UserBoard } from './components/UserBoard';
@@ -27,16 +27,16 @@ const App = () => {
 
   const tokenCanisters = [
     {
-      canisterName: 'HogeDIP20',
+      canisterName: 'GoldDIP20',
       tokenSymbol: 'THG',
-      factory: HogeidlFactory,
-      canisterId: HogeDIP20canisterId,
+      factory: GoldIdlFactory,
+      canisterId: GoldDIP20canisterId,
     },
     {
-      canisterName: 'PiyoDIP20',
+      canisterName: 'SilverDIP20',
       tokenSymbol: 'TPY',
-      factory: PiyoidlFactory,
-      canisterId: PiyoDIP20canisterId,
+      factory: SilverIdlFactory,
+      canisterId: SilverDIP20canisterId,
     },
   ];
 
