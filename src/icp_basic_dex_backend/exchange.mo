@@ -6,22 +6,22 @@ import BalanceBook "balance_book";
 import T "types";
 
 module {
-    // Internal types
-    type TradingPair = (T.Token, T.Token);
 
     public class Exchange(balance_book : BalanceBook.BalanceBook) {
 
         // 売り注文のIDと注文内容をマッピング
-        // 0 : initCapacity
-        // func(order_id_x, order_id_y) : keyEq
-        // func(order_id_x) : keyHash
+        // 第一引数 : initCapacity
+        // 第二引数 : keyEq（キーを比較する際に使用する関数を指定）
+        // 第三引数 : keyHash（キーに使用する値を指定）
         var orders = HashMap.HashMap<T.OrderId, T.Order>(
             0,
             func(order_id_x, order_id_y) { return (order_id_x == order_id_y) },
             func(order_id_x) { return (order_id_x) },
         );
 
-        // Buffer : 拡張可能な汎用・可変シーケンス。固定長・不変のArrayよりも効率が良いため今回はBufferを使用。
+        // 保存されているオーダー一覧を配列で返す
+        // `Buffer` : 拡張可能な汎用・可変シーケンス。
+        // 固定長・不変のArrayよりも効率が良いためBufferを使用。
         public func getOrders() : [T.Order] {
             let buff = Buffer.Buffer<T.Order>(0);
 
@@ -29,17 +29,22 @@ module {
             for (order in orders.vals()) {
                 buff.add(order);
             };
-            buff.toArray();
+            // `Buffer`から`Array`に変換して返す
+            return (buff.toArray());
         };
 
+        // 引数に渡されたIDのオーダーを返す
         public func getOrder(id : Nat32) : ?T.Order {
             return (orders.get(id));
         };
 
+        // 引数に渡されたIDのオーダーを削除する
         public func cancelOrder(id : T.OrderId) : ?T.Order {
             return (orders.remove(id));
         };
 
+        // オーダーを追加する
+        // 追加する際、取引が成立するオーダーがあるかを検索して見つかったら取引を実行する
         public func addOrder(new_order : T.Order) {
             orders.put(new_order.id, new_order);
             detectMatch(new_order);
@@ -57,10 +62,10 @@ module {
         };
 
         func processTrade(order_x : T.Order, order_y : T.Order) {
-            // 取引内容でXのトークン残高を更新
+            // 取引の内容で`order_x`の作成者のトークン残高を更新
             let _removed_x = balance_book.removeToken(order_x.owner, order_x.from, order_x.fromAmount);
             balance_book.addToken(order_x.owner, order_x.to, order_x.toAmount);
-            // 取引内容でYのトークン残高を更新
+            // 取引の内容で`order_y`のトークン残高を更新
             let _removed_y = balance_book.removeToken(order_y.owner, order_y.from, order_y.fromAmount);
             balance_book.addToken(order_y.owner, order_y.to, order_y.toAmount);
 

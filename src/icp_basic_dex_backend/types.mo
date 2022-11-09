@@ -36,6 +36,7 @@ module {
         transferFrom : (from : Principal, to : Principal, value : Nat) -> async TxReceipt;
     };
 
+    // ====== DEPOSIT / WITHDRAW =====
     public type DepositReceipt = {
         #Ok : Nat;
         #Err : {
