@@ -18,6 +18,7 @@ module {
   };
 
   public type DIPInterface = actor {
+    balanceOf : (who : Principal) -> async Nat;
     transfer : (to : Principal, value : Nat) -> async TxReceipt;
   };
 

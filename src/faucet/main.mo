@@ -5,11 +5,11 @@ import Principal "mo:base/Principal";
 
 import T "types";
 
-actor class Faucet() {
+shared (msg) actor class Faucet() = this {
 
   private let TOTAL_FAUCET_AMOUNT : Nat = 100_000;
   private let FAUCET_AMOUNT : Nat = 1_000;
-  private var amount_counter : Nat = 0;
+  private let owner : Principal = msg.caller;
 
   // ユーザーとトークンPrincipalをマッピング
   // トークンPrincipalは、複数を想定して配列にする
@@ -20,7 +20,7 @@ actor class Faucet() {
   );
 
   public shared (msg) func getToken(token : T.Token) : async T.FaucetReceipt {
-    let faucet_receipt = checkDistribution(msg.caller, token);
+    let faucet_receipt = await checkDistribution(msg.caller, token);
     switch (faucet_receipt) {
       case (#Err e) {
         return #Err(e);
@@ -28,13 +28,11 @@ actor class Faucet() {
       case _ {};
     };
 
-    let faucet_amount = getFaucetAmount();
-
     // `Token` PrincipalでDIP20アクターのインスタンスを生成
     let dip20 = actor (Principal.toText(token)) : T.DIPInterface;
 
     // トークンを転送する
-    let txReceipt = await dip20.transfer(msg.caller, faucet_amount);
+    let txReceipt = await dip20.transfer(msg.caller, FAUCET_AMOUNT);
     switch txReceipt {
       case (#Err e) {
         return #Err(#FaucetFailure);
@@ -44,24 +42,20 @@ actor class Faucet() {
 
     // 転送に成功したら、`faucet_book`に保存する
     addUser(msg.caller, token);
-    return #Ok(faucet_amount);
+    return #Ok(FAUCET_AMOUNT);
   };
 
-  // 一人に配布するトークン量を返す
-  private func getFaucetAmount() : Nat {
-    return FAUCET_AMOUNT;
-  };
-
-  // 既に配布したトータルのトークン量を返す
-  private func getFaucetCount() : Nat {
-    return amount_counter;
+  public shared (msg) func clearBook() {
+    assert (msg.caller != owner);
+    faucet_book := HashMap.HashMap<Principal, [T.Token]>(
+      10,
+      Principal.equal,
+      Principal.hash,
+    );
   };
 
   // トークンを配布したユーザーとそのトークンを保存する
   private func addUser(user : Principal, token : T.Token) {
-    // 配布量を更新する
-    amount_counter += FAUCET_AMOUNT;
-
     // 配布するトークンをユーザーに紐づけて保存する
     switch (faucet_book.get(user)) {
       case null {
@@ -81,8 +75,12 @@ actor class Faucet() {
 
   // Faucetとしてトークンを配布しているかどうかを確認する
   // 配布可能なら`#Ok`、不可能なら`#Err`を返す
-  private func checkDistribution(user : Principal, token : T.Token) : T.FaucetReceipt {
-    if (amount_counter >= TOTAL_FAUCET_AMOUNT) {
+  private func checkDistribution(user : Principal, token : T.Token) : async T.FaucetReceipt {
+    // `Token` PrincipalでDIP20アクターのインスタンスを生成
+    let dip20 = actor (Principal.toText(token)) : T.DIPInterface;
+    let balance = await dip20.balanceOf(Principal.fromActor(this));
+
+    if (balance == 0) {
       return (#Err(#InsufficientToken));
     };
 
