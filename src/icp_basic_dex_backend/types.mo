@@ -36,6 +36,7 @@ module {
         transferFrom : (from : Principal, to : Principal, value : Nat) -> async TxReceipt;
     };
 
+    // ====== DEPOSIT / WITHDRAW =====
     public type DepositReceipt = {
         #Ok : Nat;
         #Err : {
@@ -53,7 +54,6 @@ module {
         };
     };
 
-    // TODO: Ref. owner不要なら削除
     public type Balance = {
         owner : Principal;
         token : Principal;

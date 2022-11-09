@@ -1,46 +1,55 @@
 import Array "mo:base/Array";
 import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
+import HashMap "mo:base/HashMap";
 import Principal "mo:base/Principal";
 
-import Book "book";
+import BalanceBook "balance_book";
 import Exchange "exchange";
 import T "types";
 
 actor class Dex() = this {
-  // 売り注文のIDを管理する変数
-  var last_id : Nat32 = 0;
 
-  // ユーザーの残高を管理するモジュール
-  private var book = Book.Book();
+  // アップグレード時にオーダーを保存しておく`Stable`変数
+  stable var orders_stable : [T.Order] = [];
+  // DEXに預けたユーザーのトークン残高を保存する`Stable`変数
+  private stable var balance_stable : [var (Principal, [(T.Token, Nat)])] = [var];
 
-  // 売り注文を管理するモジュール
-  private var exchange = Exchange.Exchange(book);
+  // オーダーのIDを管理する`Stable`変数
+  stable var last_id : Nat32 = 0;
+
+  // DEXのユーザートークンを管理するモジュール
+  private var balance_book = BalanceBook.BalanceBook();
+
+  // オーダーを管理するモジュール
+  private var exchange = Exchange.Exchange(balance_book);
 
   // ===== DEPOSIT / WITHDRAW =====
+  // ユーザーがDEXにトークンを預ける時にコールする
+  // 成功すると預けた量を、失敗するとエラー文を返す
   public shared (msg) func deposit(token : T.Token) : async T.DepositReceipt {
     Debug.print(
       "Message caller: " # Principal.toText(msg.caller) # "| Deposit Token: " # Principal.toText(token),
     );
 
-    // tokenをDIP20のアクターにキャスト
+    // `Token` PrincipalでDIP20アクターのインスタンスを生成
     let dip20 = actor (Principal.toText(token)) : T.DIPInterface;
 
-    // DIPのfeeを取得
+    // トークンに設定された`fee`を取得
     let dip_fee = await fetch_dif_fee(token);
 
-    // DIP20のallowanceで残高を取得
-    // `Principal.fromActor(this)`: DEXキャニスター（main.mo）自身
+    // ユーザーが保有するトークン量を取得
+    // `Principal.fromActor(this)`: DEX canister (main.mo) itself
     let balance = await dip20.allowance(msg.caller, Principal.fromActor(this));
 
-    // DEXへユーザーの資金を送る
-    let token_reciept = if (balance > dip_fee) {
-      await dip20.transferFrom(msg.caller, Principal.fromActor(this), balance - dip_fee);
-    } else {
+    // 残高不足の場合エラーとなる
+    if (balance <= dip_fee) {
       return #Err(#BalanceLow);
     };
+    // DEXに転送
+    let token_reciept = await dip20.transferFrom(msg.caller, Principal.fromActor(this), balance - dip_fee);
 
-    // `transferFrom()`の結果をチェック
+    // `transferFrom()`の結果を確認
     switch token_reciept {
       case (#Err e) {
         return #Err(#TransferFailure);
@@ -48,20 +57,18 @@ actor class Dex() = this {
       case _ {};
     };
 
-    let available = balance - dip_fee;
-
-    // `book`にユーザーとトークンを追加
-    book.addTokens(msg.caller, token, available);
+    // `balance_book`にユーザーPrincipalとトークンデータを記録
+    balance_book.addToken(msg.caller, token, balance - dip_fee);
 
     return #Ok(balance - dip_fee);
   };
 
-  public shared (msg) func withdraw(token : T.Token, amount : Nat /*, address : Principal*/) : async T.WithdrawReceipt {
-    // キャニスターIDをDIP20Interfaceにキャスト
+  // DEXからトークンを引き出す時にコールされる
+  // 成功すると引き出したトークン量が、失敗するとエラー文を返す
+  public shared (msg) func withdraw(token : T.Token, amount : Nat) : async T.WithdrawReceipt {
     let dip20 = actor (Principal.toText(token)) : T.DIPInterface;
 
-    // ユーザーへトークンを送る
-    // let txReceipt = await dip20.transfer(address, amount);
+    // `transfer`でユーザーにトークンを転送する
     let txReceipt = await dip20.transfer(msg.caller, amount);
 
     switch txReceipt {
@@ -71,27 +78,29 @@ actor class Dex() = this {
       case _ {};
     };
 
-    // DIPのfeeを取得
     let dip_fee = await fetch_dif_fee(token);
-    // `book`から引き出した分のトークンデータを削除
-    switch (book.removeTokens(msg.caller, token, amount + dip_fee)) {
+
+    // `balance_book`のトークンデータを修正する
+    switch (balance_book.removeToken(msg.caller, token, amount + dip_fee)) {
+      // 残高不足で失敗した時
       case (null) {
         return #Err(#BalanceLow);
       };
       case _ {};
     };
 
-    // TODO: ユーザーが登録したオーダーを削除
+    // ユーザーが作成したオーダーを削除する
     for (order in exchange.getOrders().vals()) {
       if (msg.caller == order.owner and token == order.from) {
-        // `DEX`内のユーザー預け入れ残高とオーダーのfromAmountと比較
-        if (book.hasEnoughBalance(msg.caller, token, order.fromAmount) == false) {
+        // ユーザの預金残高とオーダーの`fromAmount`を比較する
+        if (balance_book.hasEnoughBalance(msg.caller, token, order.fromAmount) == false) {
+          // `cancelOrder()`を実行する
           switch (exchange.cancelOrder(order.id)) {
-            // キャンセル成功
+            // 成功した時
             case (?cancel_order) {
               return (#Ok(amount));
             };
-            // キャンセル失敗（removenに失敗）
+            // 失敗した時
             case (null) {
               return (#Err(#DeleteOrderFailure));
             };
@@ -100,12 +109,12 @@ actor class Dex() = this {
         return #Ok(amount);
       };
     };
-
     return #Ok(amount);
   };
 
   // ===== ORDER =====
-  // 売り注文を登録する
+  // ユーザーがオーダーを作成する時にコールされる
+  // 成功するとオーダーの内容が、失敗するとエラー文を返す
   public shared (msg) func placeOrder(
     from : T.Token,
     fromAmount : Nat,
@@ -113,28 +122,26 @@ actor class Dex() = this {
     toAmount : Nat,
   ) : async T.PlaceOrderReceipt {
 
-    // TODO: check `create_trading_pair()`
-
-    // ユーザーが`from`トークンで別の売り注文を出していないか確認
+    // ユーザーが`from`トークンで別のオーダーを出していないことを確認
     for (order in exchange.getOrders().vals()) {
-      // Debug.print(
-      //   "check user :" # Principal.toText(msg.caller) # " vs " # Principal.toText(order.owner) # "\ncheck token :" # Principal.toText(from) # " vs " # Principal.toText(order.from),
-      // );
       if (msg.caller == order.owner and from == order.from) {
         return (#Err(#OrderBookFull));
       };
     };
 
-    // ユーザーの残高が足りるかチェック
-    if (book.hasEnoughBalance(msg.caller, from, fromAmount) == false) {
+    // ユーザーが十分なトークン量を持っているか確認
+    if (balance_book.hasEnoughBalance(msg.caller, from, fromAmount) == false) {
       Debug.print("Not enough balance for user " # Principal.toText(msg.caller) # " in token " # Principal.toText(from));
       return (#Err(#InvalidOrder));
     };
 
+    // オーダーのIDを取得する
     let id : Nat32 = nextId();
+    // `placeOrder`を呼び出したユーザーPrincipalを変数に格納する
+    // msg.callerのままだと、下記の構造体に設定できないため
     let owner = msg.caller;
 
-    // `Order`データ構造を作成
+    // オーダーを作成する
     let order : T.Order = {
       id;
       owner;
@@ -148,54 +155,60 @@ actor class Dex() = this {
     return (#Ok(exchange.getOrder(id)));
   };
 
-  // 売り注文をキャンセルする
+  // ユーザーがオーダーを削除する時にコールされる
+  // 成功したら削除したオーダーのIDを、失敗したらエラー文を返す
   public shared (msg) func cancelOrder(order_id : T.OrderId) : async T.CancelOrderReceipt {
     switch (exchange.getOrder(order_id)) {
-      // 注文IDが存在する
+      // IDでオーダーが見つかった時
       case (?order) {
-        // キャンセルしようとしているユーザーと、売り注文のオーナーが一致するかチェック
+        // キャンセルしようとしているユーザーが、売り注文を作成したユーザー（所有者）と一致するかどうかをチェックする
         if (msg.caller != order.owner) {
           return (#Err(#NotAllowed));
         };
-        // 売り注文のキャンセルを実行
+        // `cancleOrder`を実行する
         switch (exchange.cancelOrder(order_id)) {
-          // キャンセル成功
+          // 成功した時
           case (?cancel_order) {
             return (#Ok(cancel_order.id));
           };
-          // キャンセル失敗（removenに失敗）
+          // 失敗した時
           case (null) {
             return (#Err(#NotExistingOrder));
           };
         };
       };
-      // 注文IDが存在しない
+      // オーダーが見つからなかった時
       case (null) {
         return (#Err(#NotExistingOrder));
       };
     };
   };
 
-  public func getOrders() : async ([T.Order]) {
+  // Get all sell orders
+  public query func getOrders() : async ([T.Order]) {
     return (exchange.getOrders());
   };
 
-  // Internal functions
+  // ===== INTERNAL FUNCTIONS =====
+  // トークンに設定された`fee`を取得する
   private func fetch_dif_fee(token : T.Token) : async Nat {
     let dip20 = actor (Principal.toText(token)) : T.DIPInterface;
     let metadata = await dip20.getMetadata();
     metadata.fee;
   };
 
+  // オーダーのIDを更新して返す
   private func nextId() : Nat32 {
     last_id += 1;
     return (last_id);
   };
 
   // ===== DEX STATE FUNCTIONS =====
-  // ユーザーがDEXに預けたトークンの残高を取得する
+  // ユーザーがDEXに預けたトークンの残高を取得する時にコールされる
+  // データがあれば配列でトークンデータを返し、なければ空の配列を返す
   public shared query (msg) func getBalances() : async [T.Balance] {
-    switch (book.get(msg.caller)) {
+    switch (balance_book.get(msg.caller)) {
+      // ユーザーのデータが見つかった時
       case (?token_balance) {
         // 配列の値の順番を保ったまま、関数で各値を変換する(`(Principal, Nat)` -> `Balace`)。
         Array.map<(Principal, Nat), T.Balance>(
@@ -209,27 +222,66 @@ actor class Dex() = this {
           },
         );
       };
+      // ユーザーのデータが見つからなかった時
       case (null) {
         return [];
       };
     };
   };
 
+  // 引数で渡されたトークンPrincipalの残高を取得する
   public shared query (msg) func getBalance(token : T.Token) : async Nat {
-    switch (book.get(msg.caller)) {
+    switch (balance_book.get(msg.caller)) {
+      // ユーザーのデータが見つかった時
       case (?token_balances) {
         switch (token_balances.get(token)) {
+          // 引数で渡されたトークンデータが見つかった時
           case (?amount) {
             return (amount);
           };
+          // トークンデータが見つからなかった時
           case (null) {
             return (0);
           };
         };
       };
+      // ユーザーのデータが見つからなかった時
       case (null) {
         return 0;
       };
     };
+  };
+
+  // ===== UPGRADE METHODS =====
+  // アップグレード前に、ハッシュマップに保存したデータを安定したメモリに保存する。
+  system func preupgrade() {
+    // DEXに預けられたユーザーのトークンデータを`Array`に保存
+    balance_stable := Array.init(balance_book.size(), (Principal.fromText("aaaaa-aa"), []));
+    var i = 0;
+    for ((x, y) in balance_book.entries()) {
+      balance_stable[i] := (x, Iter.toArray(y.entries()));
+      i += 1;
+    };
+
+    // book内で管理しているオーダーを保存
+    orders_stable := exchange.getOrders();
+  };
+
+  // キャニスターのアップグレード後、`Array`から`HashMap`に再構築する。
+  system func postupgrade() {
+    // `balance_book`を再構築
+    for ((key : Principal, value : [(T.Token, Nat)]) in balance_stable.vals()) {
+      let tmp : HashMap.HashMap<T.Token, Nat> = HashMap.fromIter<T.Token, Nat>(Iter.fromArray<(T.Token, Nat)>(value), 10, Principal.equal, Principal.hash);
+      balance_book.put(key, tmp);
+    };
+
+    // オーダーを再構築
+    for (order in orders_stable.vals()) {
+      exchange.addOrder(order);
+    };
+
+    // `Stable`に使用したメモリをクリアする.
+    balance_stable := [var];
+    orders_stable := [];
   };
 };

@@ -1,26 +1,45 @@
+import Iter "mo:base/Iter";
 import Principal "mo:base/Principal";
 import HashMap "mo:base/HashMap";
 
 import T "types";
 
 module {
-    public class Book() {
+    public class BalanceBook() {
 
         // ユーザーとトークンの種類・量をマッピング
-        // 0 : initCapacity
-        // Principal.equal : keyEq
-        // Principal.hash : keyHash
-        var book = HashMap.HashMap<Principal, HashMap.HashMap<T.Token, Nat>>(0, Principal.equal, Principal.hash);
+        // 第一引数 : initCapacity
+        // 第二引数 : keyEq（キーを比較する際に使用する関数を指定）
+        // 第三引数 : keyHash（キーに使用する値を指定）
+        var balance_book = HashMap.HashMap<Principal, HashMap.HashMap<T.Token, Nat>>(0, Principal.equal, Principal.hash);
 
-        // Principal(`user`)に紐づいたトークンと残高を取得
+        // ユーザーPrincipalに紐づいたトークンと残高を取得
         public func get(user : Principal) : ?HashMap.HashMap<T.Token, Nat> {
-            return book.get(user);
+            return balance_book.get(user);
+        };
+
+        // ユーザーと預け入れたトークンデータを追加する
+        // `postupgrade`を実行する際に使用される
+        public func put(user : Principal, userBalances : HashMap.HashMap<T.Token, Nat>) {
+            balance_book.put(user, userBalances);
+        };
+
+        // ユーザーPrincipalとトークンデータのイテレータを返す
+        // `postupgrade`を実行する際に使用される
+        public func entries() : Iter.Iter<(Principal, HashMap.HashMap<T.Token, Nat>)> {
+            balance_book.entries();
+        };
+
+        // 保存されているデータの量を返す
+        // `postupgrade`を実行する際に使用される
+        public func size() : Nat {
+            balance_book.size();
         };
 
         // ユーザーの預け入れを記録する
-        public func addTokens(user : Principal, token : T.Token, amount : Nat) {
+        public func addToken(user : Principal, token : T.Token, amount : Nat) {
             // ユーザーのデータがあるかどうか
-            switch (book.get(user)) {
+            switch (balance_book.get(user)) {
                 // ユーザーデータあり
                 case (?token_balance) {
                     // トークンが記録されているかどうか
@@ -39,15 +58,16 @@ module {
                 case (null) {
                     var new_data = HashMap.HashMap<Principal, Nat>(0, Principal.equal, Principal.hash);
                     new_data.put(token, amount);
-                    book.put(user, new_data);
+                    balance_book.put(user, new_data);
                 };
             };
         };
 
-        // DEXからトークンを引き出す際に呼び出される関数。更新された残高を返す。
-        public func removeTokens(user : Principal, token : T.Token, amount : Nat) : ?Nat {
+        // DEXからトークンを引き出す際にコールされる
+        // トークンがあれば更新された残高を返し、なければ`null`を返す
+        public func removeToken(user : Principal, token : T.Token, amount : Nat) : ?Nat {
             // ユーザーのデータがあるかどうか
-            switch (book.get(user)) {
+            switch (balance_book.get(user)) {
                 // ユーザーデータあり
                 case (?token_balance) {
                     // トークンが記録されているかどうか
@@ -81,10 +101,11 @@ module {
             };
         };
 
-        // ユーザーが`book`内に`amount`分のトークンを保有しているかをチェックする
+        // ユーザーが`balance_book`内に`amount`分のトークンを保有しているかを確認する
+        // トークンが十分あれば`true`を、なければ`false`を返す
         public func hasEnoughBalance(user : Principal, token : T.Token, amount : Nat) : Bool {
             // ユーザーデータがあるかどうか
-            switch (book.get(user)) {
+            switch (balance_book.get(user)) {
                 // ユーザーデータあり
                 case (?token_balance) {
                     // トークンが記録されているかどうか
