@@ -20,17 +20,16 @@ export const UserBoard = (props) => {
   } = props;
 
   const handleDeposit = async (updateIndex) => {
-    const tokenActor = Actor.createActor(tokenCanisters[updateIndex].factory, {
-      agent,
-      canisterId: tokenCanisters[updateIndex].canisterId,
-    });
-
-    const DEXActor = Actor.createActor(DEXidlFactory, {
-      agent,
-      canisterId: DEXCanisterId,
-    });
-
     try {
+      const DEXActor = Actor.createActor(DEXidlFactory, {
+        agent,
+        canisterId: DEXCanisterId,
+      });
+      const tokenActor = Actor.createActor(tokenCanisters[updateIndex].factory, {
+        agent,
+        canisterId: tokenCanisters[updateIndex].canisterId,
+      });
+
       // Approve user token transfer by DEX.
       const resultApprove
         = await tokenActor.approve(Principal.fromText(DEXCanisterId), 5000);
@@ -63,17 +62,16 @@ export const UserBoard = (props) => {
   };
 
   const handleWithdraw = async (updateIndex) => {
-    const tokenActor = Actor.createActor(tokenCanisters[updateIndex].factory, {
-      agent,
-      canisterId: tokenCanisters[updateIndex].canisterId,
-    });
-
-    const DEXActor = Actor.createActor(DEXidlFactory, {
-      agent,
-      canisterId: DEXCanisterId,
-    });
-
     try {
+      const DEXActor = Actor.createActor(DEXidlFactory, {
+        agent,
+        canisterId: DEXCanisterId,
+      });
+      const tokenActor = Actor.createActor(tokenCanisters[updateIndex].factory, {
+        agent,
+        canisterId: tokenCanisters[updateIndex].canisterId,
+      });
+
       const resultWithdraw
         = await DEXActor.withdraw(Principal.fromText(tokenCanisters[updateIndex].canisterId), 5000);
       console.log(`resultWithdraw: ${resultWithdraw.Ok}`);
