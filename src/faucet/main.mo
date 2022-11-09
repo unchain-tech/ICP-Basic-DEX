@@ -1,6 +1,7 @@
 import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
 import HashMap "mo:base/HashMap";
+import Iter "mo:base/Iter";
 import Principal "mo:base/Principal";
 
 import T "types";
@@ -9,7 +10,8 @@ shared (msg) actor class Faucet() = this {
 
   private let TOTAL_FAUCET_AMOUNT : Nat = 100_000;
   private let FAUCET_AMOUNT : Nat = 1_000;
-  private let owner : Principal = msg.caller;
+  private stable let owner : Principal = msg.caller;
+  private stable var faucetBookEntries : [var (Principal, [T.Token])] = [var];
 
   // ユーザーとトークンPrincipalをマッピング
   // トークンPrincipalは、複数を想定して配列にする
@@ -98,4 +100,23 @@ shared (msg) actor class Faucet() = this {
       };
     };
   };
+
+  // ===== UPGRADE =====
+  system func preupgrade() {
+    faucetBookEntries := Array.init(faucet_book.size(), (Principal.fromText("aaaaa-aa"), []));
+    var i = 0;
+    for ((x, y) in faucet_book.entries()) {
+      faucetBookEntries[i] := (x, y);
+      i += 1;
+    };
+  };
+
+  system func postupgrade() {
+    for ((key : Principal, value : [T.Token]) in faucetBookEntries.vals()) {
+      faucet_book.put(key, value);
+    };
+  };
+
+  // `Stable`に使用したメモリをクリアする
+  faucetBookEntries := [var];
 };
