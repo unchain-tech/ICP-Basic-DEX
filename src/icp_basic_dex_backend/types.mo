@@ -36,6 +36,16 @@ module {
         transferFrom : (from : Principal, to : Principal, value : Nat) -> async TxReceipt;
     };
 
+    // ===== FAUCET =====
+    public type FaucetReceipt = {
+        #Ok : Nat;
+        #Err : {
+            #AlreadyGiven;
+            #FaucetFailure;
+            #InsufficientToken;
+        };
+    };
+
     // ====== DEPOSIT / WITHDRAW =====
     public type DepositReceipt = {
         #Ok : Nat;
