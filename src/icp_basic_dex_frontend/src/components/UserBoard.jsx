@@ -5,6 +5,10 @@ import { canisterId as DEXCanisterId }
   from '../../../declarations/icp_basic_dex_backend';
 import { idlFactory as DEXidlFactory }
   from '../../../declarations/icp_basic_dex_backend/icp_basic_dex_backend.did.js';
+import { canisterId as faucetCanisterId }
+  from '../../../declarations/faucet';
+import { idlFactory as faucetFactory }
+  from '../../../declarations/faucet/faucet.did.js';
 
 export const UserBoard = (props) => {
   const {
@@ -42,7 +46,7 @@ export const UserBoard = (props) => {
       const dexBalance
         = await DEXActor.getBalance(Principal.fromText(tokenCanisters[updateIndex].canisterId));
 
-      // Set new user infomation.
+      // Set new user information.
       setUserTokens(
         userTokens.map((userToken, index) => (
           index === updateIndex ? {
@@ -80,7 +84,7 @@ export const UserBoard = (props) => {
       const dexBalance
         = await DEXActor.getBalance(Principal.fromText(tokenCanisters[updateIndex].canisterId));
 
-      // Set new user infomation.
+      // Set new user information.
       setUserTokens(
         userTokens.map((userToken, index) => (
           index === updateIndex ? {
@@ -95,6 +99,46 @@ export const UserBoard = (props) => {
       console.log(`handleWithdraw: ${error} `);
     }
   };
+
+  const handleFaucet = async (updateIndex) => {
+    try {
+      const faucetActor = Actor.createActor(faucetFactory, {
+        agent,
+        canisterId: faucetCanisterId,
+      });
+      const tokenActor = Actor.createActor(tokenCanisters[updateIndex].factory, {
+        agent,
+        canisterId: tokenCanisters[updateIndex].canisterId,
+      });
+
+      const resultFaucet
+        = await faucetActor.getToken(Principal.fromText(tokenCanisters[updateIndex].canisterId));
+      // Check Error
+      if (!resultFaucet.Ok) {
+        alert(`Error: ${Object.keys(resultFaucet.Err)[0]}`);
+        return;
+      }
+      console.log(`resultFaucet: ${resultFaucet.Ok}`);
+
+      // Get updated balance of token Canister.
+      const balance
+        = await tokenActor.balanceOf(Principal.fromText(currentPrincipalId));
+
+      // Set new user information.
+      setUserTokens(
+        userTokens.map((userToken, index) => (
+          index === updateIndex ? {
+            symbol: userToken.symbol,
+            balance: balance.toString(),
+            dexBalance: userToken.dexBalance,
+            fee: userToken.fee,
+          } : userToken))
+      );
+
+    } catch (error) {
+      console.log(`handleFaucet: ${error}`);
+    }
+  }
 
   return (
     <>
@@ -132,7 +176,12 @@ export const UserBoard = (props) => {
                         >
                           Withdraw
                         </button>
-                        <button className='btn-faucet'>Faucet</button>
+                        <button
+                          className='btn-faucet'
+                          onClick={() => handleFaucet(index)}
+                        >
+                          Faucet
+                        </button>
                       </div>
                     </td>
                   </tr>
