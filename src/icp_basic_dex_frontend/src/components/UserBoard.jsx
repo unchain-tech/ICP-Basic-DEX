@@ -19,6 +19,8 @@ export const UserBoard = (props) => {
     setUserTokens,
   } = props;
 
+  const TOKEN_AMOUNT = 500;
+
   const handleDeposit = async (updateIndex) => {
     try {
       const DEXActor = Actor.createActor(DEXidlFactory, {
@@ -32,7 +34,7 @@ export const UserBoard = (props) => {
 
       // Approve user token transfer by DEX.
       const resultApprove
-        = await tokenActor.approve(Principal.fromText(DEXCanisterId), 5000);
+        = await tokenActor.approve(Principal.fromText(DEXCanisterId), TOKEN_AMOUNT);
       console.log(`resultApprove: ${resultApprove.Ok}`);
       // Deposit token from token canister to DEX.
       const resultDeposit
@@ -73,7 +75,7 @@ export const UserBoard = (props) => {
       });
 
       const resultWithdraw
-        = await DEXActor.withdraw(Principal.fromText(tokenCanisters[updateIndex].canisterId), 5000);
+        = await DEXActor.withdraw(Principal.fromText(tokenCanisters[updateIndex].canisterId), TOKEN_AMOUNT);
       console.log(`resultWithdraw: ${resultWithdraw.Ok}`);
       // Get updated balance of token Canister.
       const balance

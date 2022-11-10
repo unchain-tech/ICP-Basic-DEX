@@ -86,8 +86,8 @@ export const PlaceOrder = (props) => {
                   onChange={handleChangeOrder}
                   required>
                   <option value="">Select token</option>
-                  <option value="THG">THG</option>
-                  <option value="TPY">TPY</option>
+                  <option value="TGD">TGD</option>
+                  <option value="TSV">TSV</option>
                 </select>
               </div>
               <div>
@@ -110,8 +110,8 @@ export const PlaceOrder = (props) => {
                   onChange={handleChangeOrder}
                   required>
                   <option value="">Select token</option>
-                  <option value="THG">THG</option>
-                  <option value="TPY">TPY</option>
+                  <option value="TGD">TGD</option>
+                  <option value="TSV">TSV</option>
                 </select>
               </div>
               <div>

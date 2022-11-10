@@ -28,13 +28,13 @@ const App = () => {
   const tokenCanisters = [
     {
       canisterName: 'GoldDIP20',
-      tokenSymbol: 'THG',
+      tokenSymbol: 'TGD',
       factory: GoldIdlFactory,
       canisterId: GoldDIP20canisterId,
     },
     {
       canisterName: 'SilverDIP20',
-      tokenSymbol: 'TPY',
+      tokenSymbol: 'TSV',
       factory: SilverIdlFactory,
       canisterId: SilverDIP20canisterId,
     },
