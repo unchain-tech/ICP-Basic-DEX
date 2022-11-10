@@ -4,10 +4,14 @@
       "main": "src/icp_basic_dex_backend/main.mo",
       "type": "motoko"
     },
-    "HogeDIP20": {
+    "faucet": {
+      "main": "src/faucet/main.mo",
+      "type": "motoko"
+    },
+    "GoldDIP20": {
       "main": "src/DIP20/motoko/src/token.mo"
     },
-    "PiyoDIP20": {
+    "SilverDIP20": {
       "main": "src/DIP20/motoko/src/token.mo"
     },
     "internet_identity": {

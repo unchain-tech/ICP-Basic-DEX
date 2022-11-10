@@ -62,10 +62,10 @@ bash ./scripts/deploy_dip20.sh
 
 Then check token metadata with canister calls.
 
-### HogeDIP20
+### GoldDIP20
 
 ```bash
-dfx canister call HogeDIP20 getMetadata
+dfx canister call GoldDIP20 getMetadata
 ```
 
 Expected
@@ -76,18 +76,18 @@ Expected
     fee = 10_000 : nat;
     decimals = 8 : nat8;
     owner = principal "xbmlx-r7xdu-5fghn-zskey-5qllz-k4ysk-e57xm-3ybr6-ope4j-juuej-aqe";
-    logo = "Token Hoge Logo";
-    name = "Token Hoge";
+    logo = "Token Gold Logo";
+    name = "Token Gold";
     totalSupply = 10_000_000_000_000_000 : nat;
     symbol = "THG";
   },
 )
 ```
 
-### PiyoDIP20
+### SilverDIP20
 
 ```bash
-dfx canister call PiyoDIP20 getMetadata
+dfx canister call SilverDIP20 getMetadata
 ```
 
 Expected
@@ -98,8 +98,8 @@ Expected
     fee = 10_000 : nat;
     decimals = 8 : nat8;
     owner = principal "xbmlx-r7xdu-5fghn-zskey-5qllz-k4ysk-e57xm-3ybr6-ope4j-juuej-aqe";
-    logo = "Token Piyo Logo";
-    name = "Token Piyo";
+    logo = "Token Silver Logo";
+    name = "Token Silver";
     totalSupply = 10_000_000_000_000_000 : nat;
     symbol = "TPY";
   },

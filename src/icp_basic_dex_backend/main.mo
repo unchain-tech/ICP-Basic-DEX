@@ -11,12 +11,13 @@ import T "types";
 actor class Dex() = this {
 
   // アップグレード時にオーダーを保存しておく`Stable`変数
-  stable var orders_stable : [T.Order] = [];
+  private stable var ordersEntries : [T.Order] = [];
+
   // DEXに預けたユーザーのトークン残高を保存する`Stable`変数
-  private stable var balance_stable : [var (Principal, [(T.Token, Nat)])] = [var];
+  private stable var balanceBookEntries : [var (Principal, [(T.Token, Nat)])] = [var];
 
   // オーダーのIDを管理する`Stable`変数
-  stable var last_id : Nat32 = 0;
+  private stable var last_id : Nat32 = 0;
 
   // DEXのユーザートークンを管理するモジュール
   private var balance_book = BalanceBook.BalanceBook();
@@ -256,32 +257,32 @@ actor class Dex() = this {
   // アップグレード前に、ハッシュマップに保存したデータを安定したメモリに保存する。
   system func preupgrade() {
     // DEXに預けられたユーザーのトークンデータを`Array`に保存
-    balance_stable := Array.init(balance_book.size(), (Principal.fromText("aaaaa-aa"), []));
+    balanceBookEntries := Array.init(balance_book.size(), (Principal.fromText("aaaaa-aa"), []));
     var i = 0;
     for ((x, y) in balance_book.entries()) {
-      balance_stable[i] := (x, Iter.toArray(y.entries()));
+      balanceBookEntries[i] := (x, Iter.toArray(y.entries()));
       i += 1;
     };
 
     // book内で管理しているオーダーを保存
-    orders_stable := exchange.getOrders();
+    ordersEntries := exchange.getOrders();
   };
 
   // キャニスターのアップグレード後、`Array`から`HashMap`に再構築する。
   system func postupgrade() {
     // `balance_book`を再構築
-    for ((key : Principal, value : [(T.Token, Nat)]) in balance_stable.vals()) {
+    for ((key : Principal, value : [(T.Token, Nat)]) in balanceBookEntries.vals()) {
       let tmp : HashMap.HashMap<T.Token, Nat> = HashMap.fromIter<T.Token, Nat>(Iter.fromArray<(T.Token, Nat)>(value), 10, Principal.equal, Principal.hash);
       balance_book.put(key, tmp);
     };
 
     // オーダーを再構築
-    for (order in orders_stable.vals()) {
+    for (order in ordersEntries.vals()) {
       exchange.addOrder(order);
     };
 
     // `Stable`に使用したメモリをクリアする.
-    balance_stable := [var];
-    orders_stable := [];
+    balanceBookEntries := [var];
+    ordersEntries := [];
   };
 };
