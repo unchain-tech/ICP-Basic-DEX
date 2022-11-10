@@ -52,9 +52,7 @@ actor class Dex() = this {
 
     // `transferFrom()`の結果を確認
     switch token_reciept {
-      case (#Err e) {
-        return #Err(#TransferFailure);
-      };
+      case (#Err e) return #Err(#TransferFailure);
       case _ {};
     };
 
@@ -73,9 +71,7 @@ actor class Dex() = this {
     let txReceipt = await dip20.transfer(msg.caller, amount);
 
     switch txReceipt {
-      case (#Err e) {
-        return #Err(#TransferFailure);
-      };
+      case (#Err e) return #Err(#TransferFailure);
       case _ {};
     };
 
@@ -83,10 +79,7 @@ actor class Dex() = this {
 
     // `balance_book`のトークンデータを修正する
     switch (balance_book.removeToken(msg.caller, token, amount + dip_fee)) {
-      // 残高不足で失敗した時
-      case (null) {
-        return #Err(#BalanceLow);
-      };
+      case null return #Err(#BalanceLow);
       case _ {};
     };
 
@@ -97,14 +90,8 @@ actor class Dex() = this {
         if (balance_book.hasEnoughBalance(msg.caller, token, order.fromAmount) == false) {
           // `cancelOrder()`を実行する
           switch (exchange.cancelOrder(order.id)) {
-            // 成功した時
-            case (?cancel_order) {
-              return (#Ok(amount));
-            };
-            // 失敗した時
-            case (null) {
-              return (#Err(#DeleteOrderFailure));
-            };
+            case null return (#Err(#DeleteOrderFailure));
+            case (?cancel_order) return (#Ok(amount));
           };
         };
         return #Ok(amount);
@@ -159,8 +146,9 @@ actor class Dex() = this {
   // ユーザーがオーダーを削除する時にコールされる
   // 成功したら削除したオーダーのIDを、失敗したらエラー文を返す
   public shared (msg) func cancelOrder(order_id : T.OrderId) : async T.CancelOrderReceipt {
+    // オーダーがあるかどうか
     switch (exchange.getOrder(order_id)) {
-      // IDでオーダーが見つかった時
+      case null return (#Err(#NotExistingOrder));
       case (?order) {
         // キャンセルしようとしているユーザーが、売り注文を作成したユーザー（所有者）と一致するかどうかをチェックする
         if (msg.caller != order.owner) {
@@ -168,19 +156,11 @@ actor class Dex() = this {
         };
         // `cancleOrder`を実行する
         switch (exchange.cancelOrder(order_id)) {
-          // 成功した時
+          case null return (#Err(#NotExistingOrder));
           case (?cancel_order) {
             return (#Ok(cancel_order.id));
           };
-          // 失敗した時
-          case (null) {
-            return (#Err(#NotExistingOrder));
-          };
         };
-      };
-      // オーダーが見つからなかった時
-      case (null) {
-        return (#Err(#NotExistingOrder));
       };
     };
   };
@@ -208,8 +188,9 @@ actor class Dex() = this {
   // ユーザーがDEXに預けたトークンの残高を取得する時にコールされる
   // データがあれば配列でトークンデータを返し、なければ空の配列を返す
   public shared query (msg) func getBalances() : async [T.Balance] {
+    // ユーザーのデータがあるかどうか
     switch (balance_book.get(msg.caller)) {
-      // ユーザーのデータが見つかった時
+      case null return [];
       case (?token_balance) {
         // 配列の値の順番を保ったまま、関数で各値を変換する(`(Principal, Nat)` -> `Balace`)。
         Array.map<(Principal, Nat), T.Balance>(
@@ -223,32 +204,22 @@ actor class Dex() = this {
           },
         );
       };
-      // ユーザーのデータが見つからなかった時
-      case (null) {
-        return [];
-      };
     };
   };
 
   // 引数で渡されたトークンPrincipalの残高を取得する
   public shared query (msg) func getBalance(token : T.Token) : async Nat {
+    // ユーザーのデータがあるかどうか
     switch (balance_book.get(msg.caller)) {
-      // ユーザーのデータが見つかった時
+      case null return 0;
       case (?token_balances) {
+        // トークンのデータがあるかどうか
         switch (token_balances.get(token)) {
-          // 引数で渡されたトークンデータが見つかった時
+          case null return (0);
           case (?amount) {
             return (amount);
           };
-          // トークンデータが見つからなかった時
-          case (null) {
-            return (0);
-          };
         };
-      };
-      // ユーザーのデータが見つからなかった時
-      case (null) {
-        return 0;
       };
     };
   };

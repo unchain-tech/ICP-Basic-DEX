@@ -24,9 +24,7 @@ shared (msg) actor class Faucet() = this {
   public shared (msg) func getToken(token : T.Token) : async T.FaucetReceipt {
     let faucet_receipt = await checkDistribution(msg.caller, token);
     switch (faucet_receipt) {
-      case (#Err e) {
-        return #Err(e);
-      };
+      case (#Err e) return #Err(e);
       case _ {};
     };
 
@@ -36,9 +34,7 @@ shared (msg) actor class Faucet() = this {
     // トークンを転送する
     let txReceipt = await dip20.transfer(msg.caller, FAUCET_AMOUNT);
     switch txReceipt {
-      case (#Err e) {
-        return #Err(#FaucetFailure);
-      };
+      case (#Err e) return #Err(#FaucetFailure);
       case _ {};
     };
 
@@ -87,14 +83,10 @@ shared (msg) actor class Faucet() = this {
     };
 
     switch (faucet_book.get(user)) {
-      case null {
-        return #Ok(FAUCET_AMOUNT);
-      };
+      case null return #Ok(FAUCET_AMOUNT);
       case (?tokens) {
         switch (Array.find<T.Token>(tokens, func(x : T.Token) { x == token })) {
-          case null {
-            return #Ok(FAUCET_AMOUNT);
-          };
+          case null return #Ok(FAUCET_AMOUNT);
           case (?token) return #Err(#AlreadyGiven);
         };
       };

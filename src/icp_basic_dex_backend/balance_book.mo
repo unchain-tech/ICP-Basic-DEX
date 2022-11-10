@@ -11,7 +11,7 @@ module {
         // 第一引数 : initCapacity
         // 第二引数 : keyEq（キーを比較する際に使用する関数を指定）
         // 第三引数 : keyHash（キーに使用する値を指定）
-        var balance_book = HashMap.HashMap<Principal, HashMap.HashMap<T.Token, Nat>>(0, Principal.equal, Principal.hash);
+        var balance_book = HashMap.HashMap<Principal, HashMap.HashMap<T.Token, Nat>>(10, Principal.equal, Principal.hash);
 
         // ユーザーPrincipalに紐づいたトークンと残高を取得
         public func get(user : Principal) : ?HashMap.HashMap<T.Token, Nat> {
@@ -40,25 +40,21 @@ module {
         public func addToken(user : Principal, token : T.Token, amount : Nat) {
             // ユーザーのデータがあるかどうか
             switch (balance_book.get(user)) {
-                // ユーザーデータあり
+                case null {
+                    var new_data = HashMap.HashMap<Principal, Nat>(2, Principal.equal, Principal.hash);
+                    new_data.put(token, amount);
+                    balance_book.put(user, new_data);
+                };
                 case (?token_balance) {
                     // トークンが記録されているかどうか
                     switch (token_balance.get(token)) {
-                        // 記録あり
+                        case null {
+                            token_balance.put(token, amount);
+                        };
                         case (?balance) {
                             token_balance.put(token, balance + amount);
                         };
-                        // 記録なし
-                        case (null) {
-                            token_balance.put(token, amount);
-                        };
                     };
-                };
-                // ユーザーデータなし
-                case (null) {
-                    var new_data = HashMap.HashMap<Principal, Nat>(0, Principal.equal, Principal.hash);
-                    new_data.put(token, amount);
-                    balance_book.put(user, new_data);
                 };
             };
         };
@@ -68,35 +64,24 @@ module {
         public func removeToken(user : Principal, token : T.Token, amount : Nat) : ?Nat {
             // ユーザーのデータがあるかどうか
             switch (balance_book.get(user)) {
-                // ユーザーデータあり
+                case null return (null);
                 case (?token_balance) {
                     // トークンが記録されているかどうか
                     switch (token_balance.get(token)) {
-                        // 記録あり
+                        case null return (null);
                         case (?balance) {
-                            if (balance >= amount) {
-                                // 残高と引き出す量が等しい時はトークンのデータごと削除
-                                if (balance == amount) {
-                                    token_balance.delete(token);
-                                    // 残高の方が多い時は差し引いた分を再度保存
-                                } else {
-                                    token_balance.put(token, balance - amount);
-                                };
-                                return ?(balance - amount);
-                                // 残高不足の時
+                            if (balance < amount) return (null);
+
+                            // 残高と引き出す量が等しい時はトークンのデータごと削除
+                            if (balance == amount) {
+                                token_balance.delete(token);
+                                // 残高の方が多い時は差し引いた分を再度保存
                             } else {
-                                return (null);
+                                token_balance.put(token, balance - amount);
                             };
-                        };
-                        // 記録なし
-                        case (null) {
-                            return (null);
+                            return ?(balance - amount);
                         };
                     };
-                };
-                // ユーザーデータなし
-                case (null) {
-                    return (null);
                 };
             };
         };
@@ -106,24 +91,16 @@ module {
         public func hasEnoughBalance(user : Principal, token : T.Token, amount : Nat) : Bool {
             // ユーザーデータがあるかどうか
             switch (balance_book.get(user)) {
-                // ユーザーデータあり
+                case null return (false);
                 case (?token_balance) {
                     // トークンが記録されているかどうか
                     switch (token_balance.get(token)) {
-                        // 記録あり
+                        case null return (false);
                         case (?balance) {
                             // `amount`以上残高ありで`true`、なしで`false`を返す
                             return (balance >= amount);
                         };
-                        // 記録なし
-                        case (null) {
-                            return (false);
-                        };
                     };
-                };
-                // ユーザーデータなし
-                case (null) {
-                    return (false);
                 };
             };
         };
