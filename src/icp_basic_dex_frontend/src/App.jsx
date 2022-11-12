@@ -7,51 +7,29 @@ import { Principal } from '@dfinity/principal';
 
 import { icp_basic_dex_backend as DEX }
   from '../../declarations/icp_basic_dex_backend';
-import { canisterId as GoldDIP20canisterId, createActor as GoldDIP20CreateActor, GoldDIP20 }
-  from '../../declarations/GoldDIP20';
-import { canisterId as SilverDIP20canisterId, createActor as SilverDIP20CreateActor, SilverDIP20 }
-  from '../../declarations/SilverDIP20';
-
 import { Header } from './components/Header';
 import { UserBoard } from './components/UserBoard';
 import { PlaceOrder } from './components/PlaceOrder';
 import { ListOrder } from './components/ListOrder';
+import { tokens } from './utils/token';
 
 const App = () => {
-  // DEX上で扱うトークンのデータを配列に格納
-  const tokenCanisters = [
-    {
-      canisterName: 'GoldDIP20',
-      canister: GoldDIP20,
-      tokenSymbol: 'TGLD',
-      createActor: GoldDIP20CreateActor,
-      canisterId: GoldDIP20canisterId,
-    },
-    {
-      canisterName: 'SilverDIP20',
-      canister: SilverDIP20,
-      tokenSymbol: 'TSLV',
-      createActor: SilverDIP20CreateActor,
-      canisterId: SilverDIP20canisterId,
-    },
-  ];
-
   const [agent, setAgent] = useState();
-  const [userPrincipal, setUserPrincipal] = useState("");
+  const [userPrincipal, setUserPrincipal] = useState();
   const [userTokens, setUserTokens] = useState([]);
   const [orderList, setOrderList] = useState([]);
 
   const updateUserTokens = async (principal) => {
-    let tokens = [];
+    let getTokens = [];
     // ユーザーの保有するトークンのデータを取得
-    for (let i = 0; i < tokenCanisters.length; ++i) {
+    for (let i = 0; i < tokens.length; ++i) {
       // トークンのメタデータを取得
-      const metadata = await tokenCanisters[i].canister.getMetadata();
+      const metadata = await tokens[i].canister.getMetadata();
       // ユーザーのトークン保有量を取得
-      const balance = await tokenCanisters[i].canister.balanceOf(principal);
+      const balance = await tokens[i].canister.balanceOf(principal);
       // DEXに預けているトークン量を取得
       const dexBalance
-        = await DEX.getBalance(principal, Principal.fromText(tokenCanisters[i].canisterId))
+        = await DEX.getBalance(principal, Principal.fromText(tokens[i].canisterId))
 
       // 取得したデータを格納
       const userToken = {
@@ -60,9 +38,9 @@ const App = () => {
         dexBalance: dexBalance.toString(),
         fee: metadata.fee.toString(),
       }
-      tokens.push(userToken);
+      getTokens.push(userToken);
     }
-    setUserTokens(tokens);
+    setUserTokens(getTokens);
   }
 
   // オーダー一覧を更新する
@@ -72,10 +50,10 @@ const App = () => {
       return {
         id: order.id,
         from: order.from,
-        fromSymbol: tokenCanisters.find(e => e.canisterId === order.from.toString()).tokenSymbol,
+        fromSymbol: tokens.find(e => e.canisterId === order.from.toString()).tokenSymbol,
         fromAmount: order.fromAmount,
         to: order.to,
-        toSymbol: tokenCanisters.find(e => e.canisterId === order.to.toString()).tokenSymbol,
+        toSymbol: tokens.find(e => e.canisterId === order.to.toString()).tokenSymbol,
         toAmount: order.toAmount,
       }
     })
@@ -90,7 +68,6 @@ const App = () => {
       // 認証済みであればPrincipalを取得
       if (resultAuthenticated) {
         const identity = authClient.getIdentity();
-        const principal = identity.getPrincipal();
         // ICと対話する`agent`を作成する
         const newAgent = new HttpAgent({ identity });
         // ローカル環境の`agent`はICの公開鍵を持っていないため、`fetchRootKey()`で鍵を取得する
@@ -98,9 +75,9 @@ const App = () => {
           newAgent.fetchRootKey();
         }
 
-        updateUserTokens(principal);
+        updateUserTokens(identity.getPrincipal());
         updateOrderList();
-        setUserPrincipal(principal.toText());
+        setUserPrincipal(identity.getPrincipal());
         setAgent(newAgent);
       } else {
         console.log(`isAuthenticated: ${resultAuthenticated}`);
@@ -135,14 +112,12 @@ const App = () => {
         <main className="app">
           <UserBoard
             agent={agent}
-            tokenCanisters={tokenCanisters}
             userPrincipal={userPrincipal}
             userTokens={userTokens}
             setUserTokens={setUserTokens}
           />
           <PlaceOrder
             agent={agent}
-            tokenCanisters={tokenCanisters}
             updateOrderList={updateOrderList}
           />
           <ListOrder

@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
+
 import { Principal } from '@dfinity/principal';
-import { canisterId as DEXCanisterId, createActor }
-  from '../../../declarations/icp_basic_dex_backend';
+import {
+  canisterId as DEXCanisterId,
+  createActor
+} from '../../../declarations/icp_basic_dex_backend';
+
+import { tokens } from '../utils/token';
 
 export const PlaceOrder = (props) => {
   const {
     agent,
-    tokenCanisters,
     updateOrderList,
   } = props;
 
@@ -41,11 +45,11 @@ export const PlaceOrder = (props) => {
       };
       const DEXActor = createActor(DEXCanisterId, options);
 
-      // `from`に入力されたトークンシンボルに一致するトークンデータを、`tokenCanisters[]`から取得
-      const fromTokenCanister = tokenCanisters.find(e => e.tokenSymbol === order.from);
+      // `from`に入力されたトークンシンボルに一致するトークンデータを、`tokens[]`から取得
+      const fromTokenCanister = tokens.find(e => e.tokenSymbol === order.from);
       const fromPrincipal = fromTokenCanister.canisterId;
-      // `to`に入力されたトークンシンボルに一致するトークンデータを、`tokenCanisters[]`から取得
-      const toTokenCanister = tokenCanisters.find(e => e.tokenSymbol === order.to);
+      // `to`に入力されたトークンシンボルに一致するトークンデータを、`tokens[]`から取得
+      const toTokenCanister = tokens.find(e => e.tokenSymbol === order.to);
       const toPrincipal = toTokenCanister.canisterId;
 
       const resultPlace

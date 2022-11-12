@@ -1,8 +1,10 @@
 import React from 'react';
 
-import { canisterId as DEXCanisterId, createActor }
-  from '../../../declarations/icp_basic_dex_backend';
 import { Principal } from '@dfinity/principal';
+import {
+  canisterId as DEXCanisterId,
+  createActor
+} from '../../../declarations/icp_basic_dex_backend';
 
 export const ListOrder = (props) => {
   const {
@@ -40,7 +42,7 @@ export const ListOrder = (props) => {
       // 取引が実行されたため、オーダー一覧を更新する
       updateOrderList();
       // ユーザーボード上のトークンデータを更新する
-      updateUserTokens(Principal.fromText(userPrincipal));
+      updateUserTokens(userPrincipal);
 
       console.log("Trade Successful!");
     } catch (error) {

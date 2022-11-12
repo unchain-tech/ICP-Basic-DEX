@@ -1,15 +1,22 @@
 import React from 'react';
+
 import { Principal } from '@dfinity/principal';
-import { canisterId as DEXCanisterId, createActor as DEXCreateActor, icp_basic_dex_backend as DEX }
-  from '../../../declarations/icp_basic_dex_backend';
-import { canisterId as faucetCanisterId, createActor as faucetCreateActor }
-  from '../../../declarations/faucet';
+import {
+  canisterId as DEXCanisterId,
+  createActor as DEXCreateActor,
+  icp_basic_dex_backend as DEX
+} from '../../../declarations/icp_basic_dex_backend';
+import {
+  canisterId as faucetCanisterId,
+  createActor as faucetCreateActor
+} from '../../../declarations/faucet';
+
+import { tokens } from '../utils/token';
 
 export const UserBoard = (props) => {
   const {
     agent,
     userPrincipal,
-    tokenCanisters,
     userTokens,
     setUserTokens,
   } = props;
@@ -24,12 +31,12 @@ export const UserBoard = (props) => {
   const updateUserToken = async (updateIndex) => {
     // ユーザーが保有するトークン量を取得
     const balance
-      = await tokenCanisters[updateIndex].canister.balanceOf(Principal.fromText(userPrincipal));
+      = await tokens[updateIndex].canister.balanceOf(userPrincipal);
     // ユーザーがDEXに預けたトークン量を取得
     const dexBalance
       = await DEX.getBalance(
-        Principal.fromText(userPrincipal),
-        Principal.fromText(tokenCanisters[updateIndex].canisterId))
+        userPrincipal,
+        Principal.fromText(tokens[updateIndex].canisterId))
 
     setUserTokens(
       userTokens.map((userToken, index) => (
@@ -46,8 +53,8 @@ export const UserBoard = (props) => {
     try {
       const DEXActor = DEXCreateActor(DEXCanisterId, options);
       const tokenActor
-        = tokenCanisters[updateIndex].createActor(
-          tokenCanisters[updateIndex].canisterId,
+        = tokens[updateIndex].createActor(
+          tokens[updateIndex].canisterId,
           options
         );
 
@@ -60,7 +67,7 @@ export const UserBoard = (props) => {
       }
       // DEXにトークンを入金する
       const resultDeposit
-        = await DEXActor.deposit(Principal.fromText(tokenCanisters[updateIndex].canisterId));
+        = await DEXActor.deposit(Principal.fromText(tokens[updateIndex].canisterId));
       if (!resultDeposit.Ok) {
         alert(`Error: ${Object.keys(resultDeposit.Err)[0]}`);
         return;
@@ -78,7 +85,7 @@ export const UserBoard = (props) => {
       const DEXActor = DEXCreateActor(DEXCanisterId, options);
       // DEXからトークンを出金する
       const resultWithdraw
-        = await DEXActor.withdraw(Principal.fromText(tokenCanisters[updateIndex].canisterId), TOKEN_AMOUNT);
+        = await DEXActor.withdraw(Principal.fromText(tokens[updateIndex].canisterId), TOKEN_AMOUNT);
       if (!resultWithdraw.Ok) {
         alert(`Error: ${Object.keys(resultWithdraw.Err)[0]}`);
         return;
@@ -96,7 +103,7 @@ export const UserBoard = (props) => {
     try {
       const faucetActor = faucetCreateActor(faucetCanisterId, options);
       const resultFaucet
-        = await faucetActor.getToken(Principal.fromText(tokenCanisters[updateIndex].canisterId));
+        = await faucetActor.getToken(Principal.fromText(tokens[updateIndex].canisterId));
       if (!resultFaucet.Ok) {
         alert(`Error: ${Object.keys(resultFaucet.Err)[0]}`);
         return;
@@ -113,7 +120,7 @@ export const UserBoard = (props) => {
     <>
       <div className="user-board">
         <h2>User</h2>
-        <li>principal ID: {userPrincipal}</li>
+        <li>principal ID: {userPrincipal.toText()}</li>
         <table>
           <tbody>
             <tr>
