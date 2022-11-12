@@ -65,6 +65,10 @@ actor class Dex() = this {
   // DEXからトークンを引き出す時にコールされる
   // 成功すると引き出したトークン量が、失敗するとエラー文を返す
   public shared (msg) func withdraw(token : T.Token, amount : Nat) : async T.WithdrawReceipt {
+    if (balance_book.hasEnoughBalance(msg.caller, token, amount) == false) {
+      return #Err(#BalanceLow);
+    };
+
     let dip20 = actor (Principal.toText(token)) : T.DIPInterface;
 
     // `transfer`でユーザーにトークンを転送する
@@ -94,9 +98,10 @@ actor class Dex() = this {
             case (?cancel_order) return (#Ok(amount));
           };
         };
-        return #Ok(amount);
+        // return #Ok(amount);
       };
     };
+
     return #Ok(amount);
   };
 
@@ -208,9 +213,9 @@ actor class Dex() = this {
   };
 
   // 引数で渡されたトークンPrincipalの残高を取得する
-  public shared query (msg) func getBalance(token : T.Token) : async Nat {
+  public query func getBalance(user : Principal, token : T.Token) : async Nat {
     // ユーザーのデータがあるかどうか
-    switch (balance_book.get(msg.caller)) {
+    switch (balance_book.get(user)) {
       case null return 0;
       case (?token_balances) {
         // トークンのデータがあるかどうか
