@@ -1,27 +1,36 @@
 import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
 import HashMap "mo:base/HashMap";
-import Iter "mo:base/Iter";
 import Principal "mo:base/Principal";
 
 import T "types";
 
 shared (msg) actor class Faucet() = this {
+  private type Token = Principal;
+
+  public type FaucetReceipt = {
+    #Ok : Nat;
+    #Err : {
+      #AlreadyGiven;
+      #FaucetFailure;
+      #InsufficientToken;
+    };
+  };
 
   private let TOTAL_FAUCET_AMOUNT : Nat = 100_000;
   private let FAUCET_AMOUNT : Nat = 1_000;
   private stable let owner : Principal = msg.caller;
-  private stable var faucetBookEntries : [var (Principal, [T.Token])] = [var];
+  private stable var faucetBookEntries : [var (Principal, [Token])] = [var];
 
   // ユーザーとトークンPrincipalをマッピング
   // トークンPrincipalは、複数を想定して配列にする
-  var faucet_book = HashMap.HashMap<Principal, [T.Token]>(
+  private var faucet_book = HashMap.HashMap<Principal, [Token]>(
     10,
     Principal.equal,
     Principal.hash,
   );
 
-  public shared (msg) func getToken(token : T.Token) : async T.FaucetReceipt {
+  public shared (msg) func getToken(token : Token) : async FaucetReceipt {
     let faucet_receipt = await checkDistribution(msg.caller, token);
     switch (faucet_receipt) {
       case (#Err e) return #Err(e);
@@ -45,7 +54,7 @@ shared (msg) actor class Faucet() = this {
 
   public shared (msg) func clearBook() {
     assert (msg.caller != owner);
-    faucet_book := HashMap.HashMap<Principal, [T.Token]>(
+    faucet_book := HashMap.HashMap<Principal, [Token]>(
       10,
       Principal.equal,
       Principal.hash,
@@ -53,27 +62,27 @@ shared (msg) actor class Faucet() = this {
   };
 
   // トークンを配布したユーザーとそのトークンを保存する
-  private func addUser(user : Principal, token : T.Token) {
+  private func addUser(user : Principal, token : Token) {
     // 配布するトークンをユーザーに紐づけて保存する
     switch (faucet_book.get(user)) {
       case null {
-        let new_data = Array.make<T.Token>(token);
+        let new_data = Array.make<Token>(token);
         faucet_book.put(user, new_data);
       };
       case (?tokens) {
-        let buff = Buffer.Buffer<T.Token>(2);
+        let buff = Buffer.Buffer<Token>(2);
         for (token in tokens.vals()) {
           buff.add(token);
         };
         // ユーザーの情報を上書きする
-        faucet_book.put(user, buff.toArray());
+        faucet_book.put(user, Buffer.toArray<Token>(buff));
       };
     };
   };
 
   // Faucetとしてトークンを配布しているかどうかを確認する
   // 配布可能なら`#Ok`、不可能なら`#Err`を返す
-  private func checkDistribution(user : Principal, token : T.Token) : async T.FaucetReceipt {
+  private func checkDistribution(user : Principal, token : Token) : async FaucetReceipt {
     // `Token` PrincipalでDIP20アクターのインスタンスを生成
     let dip20 = actor (Principal.toText(token)) : T.DIPInterface;
     let balance = await dip20.balanceOf(Principal.fromActor(this));
@@ -85,7 +94,7 @@ shared (msg) actor class Faucet() = this {
     switch (faucet_book.get(user)) {
       case null return #Ok(FAUCET_AMOUNT);
       case (?tokens) {
-        switch (Array.find<T.Token>(tokens, func(x : T.Token) { x == token })) {
+        switch (Array.find<Token>(tokens, func(x : Token) { x == token })) {
           case null return #Ok(FAUCET_AMOUNT);
           case (?token) return #Err(#AlreadyGiven);
         };
@@ -104,11 +113,10 @@ shared (msg) actor class Faucet() = this {
   };
 
   system func postupgrade() {
-    for ((key : Principal, value : [T.Token]) in faucetBookEntries.vals()) {
+    for ((key : Principal, value : [Token]) in faucetBookEntries.vals()) {
       faucet_book.put(key, value);
     };
+    // `Stable`に使用したメモリをクリアする
+    faucetBookEntries := [var];
   };
-
-  // `Stable`に使用したメモリをクリアする
-  faucetBookEntries := [var];
 };
