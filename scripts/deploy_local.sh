@@ -13,8 +13,8 @@ echo $ROOT_PRINCIPAL
 dfx start --clean --background
 
 # register, build, and deploy a dapp
-dfx deploy GoldDIP20 --argument='("Token Gold Logo", "Token Silver", "TGD", 8, 10000000000000000, principal '\"$ROOT_PRINCIPAL\"', 0)'
-dfx deploy SilverDIP20 --argument='("Token Silver Logo", "Token Silver", "TSV", 8, 10000000000000000, principal '\"$ROOT_PRINCIPAL\"', 0)'
+dfx deploy GoldDIP20 --argument='("Token Gold Logo", "Token Silver", "TGLD", 8, 10000000000000000, principal '\"$ROOT_PRINCIPAL\"', 0)'
+dfx deploy SilverDIP20 --argument='("Token Silver Logo", "Token Silver", "TSLV", 8, 10000000000000000, principal '\"$ROOT_PRINCIPAL\"', 0)'
 
 export GoldDIP20_PRINCIPAL=$(dfx canister id GoldDIP20)
 export SilverDIP20_PRINCIPAL=$(dfx canister id SilverDIP20)
