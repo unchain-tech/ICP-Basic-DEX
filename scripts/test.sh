@@ -36,7 +36,7 @@ dfx deploy icp_basic_dex_backend
 export DEX_PRINCIPAL=$(dfx canister id icp_basic_dex_backend)
 
 # ===== TEST faucet =====
-echo -e '#\n\n------ faucet ------------'
+echo -e '\n\n#------ faucet ------------'
 dfx identity use user1
 echo -n "getToken    >  " \
   && dfx canister call faucet getToken '(principal '\"$GoldDIP20_PRINCIPAL\"')'
