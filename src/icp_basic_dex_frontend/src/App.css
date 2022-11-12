@@ -73,24 +73,8 @@ td {
   color: rgb(8, 2, 38);
 }
 
-.btn-deposit {
-  border: 1px solid rgb(0, 170, 105);
-  color: rgb(0, 170, 105);
-  margin-right: 1rem;
-}
-
-.btn-withdraw {
-  border: 1px solid rgb(202, 0, 0);
-  color: rgb(202, 0, 0);
-  margin-right: 1rem;
-}
-
-.btn-faucet {
-  border: 1px solid rgb(19, 94, 208);
-  color: rgb(19, 94, 208);
-}
-
 .create-order-area {
+  background-color: rgb(41, 49, 79);
   padding: 8px;
   margin-bottom: 30px;
 }
@@ -98,13 +82,6 @@ td {
 .create-order-area span {
   margin-left: 15px;
   margin-right: 30px;
-}
-
-.create-order-area button {
-  background-color: rgb(8, 2, 38);
-  border: 1px solid rgb(0, 170, 105);
-  color: rgb(0, 170, 105);
-  margin-right: 1rem;
 }
 
 .create-order-area button:hover {
@@ -121,6 +98,10 @@ td {
   background: rgb(8, 2, 38);
   margin-bottom: 1rem;
   border-radius: 10px;
+}
+
+.form button {
+  background: rgb(8, 2, 38);
 }
 
 .form>div {
@@ -186,14 +167,19 @@ td {
   color: rgb(8, 2, 38);
 }
 
-.btn-buy {
+.btn-green {
   border: 1px solid rgb(0, 170, 105);
   color: rgb(0, 170, 105);
   margin-right: 1rem;
 }
 
-.btn-cancel {
+.btn-red {
   border: 1px solid rgb(202, 0, 0);
   color: rgb(202, 0, 0);
   margin-right: 1rem;
+}
+
+.btn-blue {
+  border: 1px solid rgb(19, 94, 208);
+  color: rgb(19, 94, 208);
 }

@@ -28,13 +28,13 @@ const App = () => {
   const tokenCanisters = [
     {
       canisterName: 'GoldDIP20',
-      tokenSymbol: 'TGD',
+      tokenSymbol: 'TGLD',
       factory: GoldIdlFactory,
       canisterId: GoldDIP20canisterId,
     },
     {
       canisterName: 'SilverDIP20',
-      tokenSymbol: 'TSV',
+      tokenSymbol: 'TSLV',
       factory: SilverIdlFactory,
       canisterId: SilverDIP20canisterId,
     },
@@ -139,7 +139,6 @@ const App = () => {
 
   // ページがリロードされた時、以下の関数を実行
   useEffect(() => {
-    console.log('useEffect');
     checkClientIdentity();
   }, [])
 
@@ -151,28 +150,33 @@ const App = () => {
         setAgent={setAgent}
         setCurrentPrincipalId={setCurrentPrincipalId}
       />
-      <main className="app">
-        <UserBoard
-          agent={agent}
-          tokenCanisters={tokenCanisters}
-          currentPrincipalId={currentPrincipalId}
-          userTokens={userTokens}
-          setUserTokens={setUserTokens}
-        />
-        <PlaceOrder
-          agent={agent}
-          tokenCanisters={tokenCanisters}
-          currentPrincipalId={currentPrincipalId}
-          updateOrderList={updateOrderList}
-        />
-        <ListOrder
-          agent={agent}
-          currentPrincipalId={currentPrincipalId}
-          orderList={orderList}
-          updateOrderList={updateOrderList}
-          updateUserTokens={updateUserTokens}
-        />
-      </main>
+      {!currentPrincipalId &&
+        <main className="app">Welcome!</main>
+      }
+      {currentPrincipalId &&
+        <main className="app">
+          <UserBoard
+            agent={agent}
+            tokenCanisters={tokenCanisters}
+            currentPrincipalId={currentPrincipalId}
+            userTokens={userTokens}
+            setUserTokens={setUserTokens}
+          />
+          <PlaceOrder
+            agent={agent}
+            tokenCanisters={tokenCanisters}
+            currentPrincipalId={currentPrincipalId}
+            updateOrderList={updateOrderList}
+          />
+          <ListOrder
+            agent={agent}
+            currentPrincipalId={currentPrincipalId}
+            orderList={orderList}
+            updateOrderList={updateOrderList}
+            updateUserTokens={updateUserTokens}
+          />
+        </main>
+      }
     </>
   )
 };

@@ -37,6 +37,10 @@ export const Header = (props) => {
         onError: reject,
       });
     });
+    // const result = await authClient.login({
+    //   identityProvider: iiUrl,
+    // });
+    // console.log(`login: ${result}`);
 
     // Get the identity from the auth client:
     const identity = authClient.getIdentity();

@@ -96,18 +96,16 @@ export const ListOrder = (props) => {
                 <td data-th="To">{order.toSymbol}</td>
                 <td data-th="Amount">{order.toAmount.toString()}</td>
                 <td data-th="Action">
-                  {currentPrincipalId &&
-                    <div>
-                      <button
-                        className="btn-buy"
-                        onClick={() => handleBuyOrder(order)}
-                      >Buy</button>
-                      <button
-                        className="btn-cancel"
-                        onClick={() => handleCancelOrder(order.id)}
-                      >Cancel</button>
-                    </div>
-                  }
+                  <div>
+                    <button
+                      className="btn-green"
+                      onClick={() => handleBuyOrder(order)}
+                    >Buy</button>
+                    <button
+                      className="btn-red"
+                      onClick={() => handleCancelOrder(order.id)}
+                    >Cancel</button>
+                  </div>
                 </td>
               </tr>
             );

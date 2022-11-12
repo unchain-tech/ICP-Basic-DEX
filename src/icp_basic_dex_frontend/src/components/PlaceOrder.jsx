@@ -86,8 +86,8 @@ export const PlaceOrder = (props) => {
                   onChange={handleChangeOrder}
                   required>
                   <option value="">Select token</option>
-                  <option value="TGD">TGD</option>
-                  <option value="TSV">TSV</option>
+                  <option value="TGLD">TGLD</option>
+                  <option value="TSLV">TSLV</option>
                 </select>
               </div>
               <div>
@@ -110,8 +110,8 @@ export const PlaceOrder = (props) => {
                   onChange={handleChangeOrder}
                   required>
                   <option value="">Select token</option>
-                  <option value="TGD">TGD</option>
-                  <option value="TSV">TSV</option>
+                  <option value="TGLD">TGLD</option>
+                  <option value="TSLV">TSLV</option>
                 </select>
               </div>
               <div>
@@ -124,7 +124,12 @@ export const PlaceOrder = (props) => {
                 />
               </div>
             </div>
-            <button type="submit">Submit Order</button>
+            <button
+              className='btn-green'
+              type="submit"
+            >
+              Submit Order
+            </button>
           </form>
         </div>
       }
