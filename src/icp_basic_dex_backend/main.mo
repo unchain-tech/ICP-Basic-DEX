@@ -190,28 +190,6 @@ actor class Dex() = this {
   };
 
   // ===== DEX STATE FUNCTIONS =====
-  // ユーザーがDEXに預けたトークンの残高を取得する時にコールされる
-  // データがあれば配列でトークンデータを返し、なければ空の配列を返す
-  public shared query (msg) func getBalances() : async [T.Balance] {
-    // ユーザーのデータがあるかどうか
-    switch (balance_book.get(msg.caller)) {
-      case null return [];
-      case (?token_balance) {
-        // 配列の値の順番を保ったまま、関数で各値を変換する(`(Principal, Nat)` -> `Balace`)。
-        Array.map<(Principal, Nat), T.Balance>(
-          Iter.toArray(token_balance.entries()),
-          func(key : Principal, value : Nat) : T.Balance {
-            {
-              owner = msg.caller;
-              token = key;
-              amount = value;
-            };
-          },
-        );
-      };
-    };
-  };
-
   // 引数で渡されたトークンPrincipalの残高を取得する
   public query func getBalance(user : Principal, token : T.Token) : async Nat {
     // ユーザーのデータがあるかどうか
