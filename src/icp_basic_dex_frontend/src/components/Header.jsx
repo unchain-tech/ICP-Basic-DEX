@@ -9,56 +9,52 @@ export const Header = (props) => {
     updateOrderList,
     updateUserTokens,
     setAgent,
-    setCurrentPrincipalId,
+    setUserPrincipal,
   } = props;
 
-  // Login Internet Identity handler
-  const handleLogin = async () => {
-    // Autofills the <input> for the II Url to point to the correct canister.
-    console.log(`process.env.DFX_NETWORK: ${process.env.DFX_NETWORK}`);
+  const handleSuccess = (authClient) => {
+    // 認証したユーザーの`identity`を取得
+    const identity = authClient.getIdentity();
 
+    // 認証したユーザーの`principal`を取得
+    const principal = identity.getPrincipal();
+
+    // 取得した`identity`を使用して、ICと対話する`agent`を作成する
+    const newAgent = new HttpAgent({ identity });
+    if (process.env.DFX_NETWORK === "local") {
+      newAgent.fetchRootKey();
+    }
+
+    // 認証したユーザーが保有するトークンのデータを取得
+    updateUserTokens(principal);
+    // オーダー一覧を取得
+    updateOrderList();
+    // ユーザーのデータを保存
+    setUserPrincipal(principal.toText());
+    setAgent(newAgent);
+  };
+
+  const handleLogin = async () => {
+    // アプリケーションが接続しているネットワークに応じて、
+    // ユーザー認証に使用するInternet IdentityのURLを決定する
     let iiUrl;
     if (process.env.DFX_NETWORK === "local") {
       iiUrl = `http://localhost:8000/?canisterId=${IICanisterID}`;
     } else if (process.env.DFX_NETWORK === "ic") {
-      iiUrl = `https://${IICanisterID}.ic0.app`;
+      // iiUrl = `https://${IICanisterID}.ic0.app`;
+      iiUrl = 'https://identity.ic0.app/#authorize'; // TODO: mainnetにデプロイしたときに問題ないかチェック
     } else {
       iiUrl = `https://${IICanisterID}.dfinity.network`;
     }
-    // Start Login process.
-    // First we have to create and AuthClient.
+    // ログイン認証を実行
     const authClient = await AuthClient.create();
-
-    // Login with Internet Identity.
-    await new Promise((resolve, reject) => {
-      authClient.login({
-        identityProvider: iiUrl,
-        onSuccess: resolve,
-        onError: reject,
-      });
-    });
-    // const result = await authClient.login({
-    //   identityProvider: iiUrl,
-    // });
-    // console.log(`login: ${result}`);
-
-    // Get the identity from the auth client:
-    const identity = authClient.getIdentity();
-    // Using the identity obtained from the auth client,
-    // we can create an agent to interact with the IC.
-    const newAgent = new HttpAgent({ identity });
-
-    if (process.env.DFX_NETWORK === "local") {
-      newAgent.fetchRootKey();
-    }
-    setAgent(newAgent);
-
-    const principal = await authClient.getIdentity().getPrincipal();
-    // Get information about the tokens held by the Logged-in user.
-    updateUserTokens(newAgent, principal);
-    // Set Order list
-    updateOrderList(newAgent);
-    setCurrentPrincipalId(principal.toText());
+    authClient.login({
+      identityProvider: iiUrl,
+      onSuccess: handleSuccess(authClient),
+      onError: (error) => {
+        console.error(`Login Failed: , ${error}`);
+      }
+    })
   };
 
   return (

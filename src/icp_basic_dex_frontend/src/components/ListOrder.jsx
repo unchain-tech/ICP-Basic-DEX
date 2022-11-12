@@ -1,25 +1,31 @@
 import React from 'react';
 
-import { Actor } from '@dfinity/agent';
-import { canisterId as DEXCanisterId }
+import { canisterId as DEXCanisterId, createActor }
   from '../../../declarations/icp_basic_dex_backend';
-import { idlFactory as DEXidlFactory }
-  from '../../../declarations/icp_basic_dex_backend/icp_basic_dex_backend.did.js';
 import { Principal } from '@dfinity/principal';
 
 export const ListOrder = (props) => {
-  const { agent, currentPrincipalId, orderList, updateOrderList, updateUserTokens } = props;
+  const {
+    agent,
+    userPrincipal,
+    orderList,
+    updateOrderList,
+    updateUserTokens
+  } = props;
 
-  // Buy order hander
+  const createDEXActor = () => {
+    // ログインしているユーザーを設定する
+    const options = {
+      agent: agent,
+    }
+    return createActor(DEXCanisterId, options);
+  }
+
+  // オーダーの購入を実行する
   const handleBuyOrder = async (order) => {
-    // Create DEX actor
-    const DEXActor = Actor.createActor(DEXidlFactory, {
-      agent,
-      canisterId: DEXCanisterId,
-    });
     try {
-
-      // Call placeOrder
+      const DEXActor = createDEXActor();
+      // オーダーのデータを`placeOrder()`に渡す
       const resultPlace
         = await DEXActor.placeOrder(
           order.to,
@@ -27,18 +33,14 @@ export const ListOrder = (props) => {
           order.from,
           Number(order.fromAmount),
         );
-
-      // Check Error
       if (!resultPlace.Ok) {
         alert(`Error: ${Object.keys(resultPlace.Err)[0]}`);
         return;
       }
-
-      // Update order list
-      updateOrderList(agent);
-
-      // Update user balances
-      updateUserTokens(agent, Principal.fromText(currentPrincipalId));
+      // 取引が実行されたため、オーダー一覧を更新する
+      updateOrderList();
+      // ユーザーボード上のトークンデータを更新する
+      updateUserTokens(Principal.fromText(userPrincipal));
 
       console.log("Trade Successful!");
     } catch (error) {
@@ -46,26 +48,18 @@ export const ListOrder = (props) => {
     };
   };
 
-
-  // Cancel order handler
+  // オーダーのキャンセルを実行する
   const handleCancelOrder = async (id) => {
     try {
-      const DEXActor = Actor.createActor(DEXidlFactory, {
-        agent,
-        canisterId: DEXCanisterId,
-      });
-
-      // Call cancelOrder
+      const DEXActor = createDEXActor();
+      // キャンセルしたいオーダーのIDを`cancelOrder()`に渡す
       const resultCancel = await DEXActor.cancelOrder(id);
-
-      // Check Error
       if (!resultCancel.Ok) {
         alert(`Error: ${Object.keys(resultCancel.Err)}`);
         return;
       }
-
-      // Update orderbook
-      updateOrderList(agent);
+      // キャンセルが実行されたため、オーダー一覧を更新する
+      updateOrderList();
 
       console.log(`Canceled order ID: ${resultCancel.Ok}`);
     } catch (error) {
@@ -75,7 +69,7 @@ export const ListOrder = (props) => {
 
 
   return (
-    <div className="order-list" style={{ backgroundColor: "rgb(8, 2, 38)" }}>
+    <div className="list-order">
       <p>Order</p>
       <table>
         <tbody>
@@ -87,6 +81,7 @@ export const ListOrder = (props) => {
             <th>Amount</th>
             <th>Action</th>
           </tr>
+          {/* オーダー一覧を表示する */}
           {orderList.map((order, index) => {
             return (
               <tr key={`${index}: ${order.token} `} >
@@ -97,6 +92,7 @@ export const ListOrder = (props) => {
                 <td data-th="Amount">{order.toAmount.toString()}</td>
                 <td data-th="Action">
                   <div>
+                    {/* オーダーに対して操作（Buy, Cancel）を行うボタンを表示 */}
                     <button
                       className="btn-green"
                       onClick={() => handleBuyOrder(order)}
@@ -112,6 +108,6 @@ export const ListOrder = (props) => {
           })}
         </tbody>
       </table>
-    </div>
+    </div >
   );
 }

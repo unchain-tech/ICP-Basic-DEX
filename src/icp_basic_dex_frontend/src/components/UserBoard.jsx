@@ -1,19 +1,14 @@
 import React from 'react';
-import { Actor } from "@dfinity/agent";
 import { Principal } from '@dfinity/principal';
-import { canisterId as DEXCanisterId }
+import { canisterId as DEXCanisterId, createActor as DEXCreateActor, icp_basic_dex_backend as DEX }
   from '../../../declarations/icp_basic_dex_backend';
-import { idlFactory as DEXidlFactory }
-  from '../../../declarations/icp_basic_dex_backend/icp_basic_dex_backend.did.js';
-import { canisterId as faucetCanisterId }
+import { canisterId as faucetCanisterId, createActor as faucetCreateActor }
   from '../../../declarations/faucet';
-import { idlFactory as faucetFactory }
-  from '../../../declarations/faucet/faucet.did.js';
 
 export const UserBoard = (props) => {
   const {
     agent,
-    currentPrincipalId,
+    userPrincipal,
     tokenCanisters,
     userTokens,
     setUserTokens,
@@ -21,21 +16,21 @@ export const UserBoard = (props) => {
 
   const TOKEN_AMOUNT = 500;
 
+  const options = {
+    agent: agent,
+  }
+
+  // ユーザーボード上のトークンデータを更新する
   const updateUserToken = async (updateIndex) => {
-    const tokenActor = Actor.createActor(tokenCanisters[updateIndex].factory, {
-      agent,
-      canisterId: tokenCanisters[updateIndex].canisterId,
-    });
-    const DEXActor = Actor.createActor(DEXidlFactory, {
-      agent,
-      canisterId: DEXCanisterId,
-    });
-    // Get updated balance of token Canister.
+    // ユーザーが保有するトークン量を取得
     const balance
-      = await tokenActor.balanceOf(Principal.fromText(currentPrincipalId));
-    // Get updated balance in DEX.
+      = await tokenCanisters[updateIndex].canister.balanceOf(Principal.fromText(userPrincipal));
+    // ユーザーがDEXに預けたトークン量を取得
     const dexBalance
-      = await DEXActor.getBalance(Principal.fromText(tokenCanisters[updateIndex].canisterId));
+      = await DEX.getBalance(
+        Principal.fromText(userPrincipal),
+        Principal.fromText(tokenCanisters[updateIndex].canisterId))
+
     setUserTokens(
       userTokens.map((userToken, index) => (
         index === updateIndex ? {
@@ -49,22 +44,21 @@ export const UserBoard = (props) => {
 
   const handleDeposit = async (updateIndex) => {
     try {
-      const DEXActor = Actor.createActor(DEXidlFactory, {
-        agent,
-        canisterId: DEXCanisterId,
-      });
-      const tokenActor = Actor.createActor(tokenCanisters[updateIndex].factory, {
-        agent,
-        canisterId: tokenCanisters[updateIndex].canisterId,
-      });
+      const DEXActor = DEXCreateActor(DEXCanisterId, options);
+      const tokenActor
+        = tokenCanisters[updateIndex].createActor(
+          tokenCanisters[updateIndex].canisterId,
+          options
+        );
 
-      // Approve user token transfer by DEX.
+      // ユーザーの代わりにDEXがトークンを転送することを承認する
       const resultApprove
         = await tokenActor.approve(Principal.fromText(DEXCanisterId), TOKEN_AMOUNT);
       if (!resultApprove.Ok) {
         alert(`Error: ${Object.keys(resultApprove.Err)[0]}`);
         return;
       }
+      // DEXにトークンを入金する
       const resultDeposit
         = await DEXActor.deposit(Principal.fromText(tokenCanisters[updateIndex].canisterId));
       if (!resultDeposit.Ok) {
@@ -74,7 +68,6 @@ export const UserBoard = (props) => {
       console.log(`resultDeposit: ${resultDeposit.Ok}`);
 
       updateUserToken(updateIndex);
-
     } catch (error) {
       console.log(`handleDeposit: ${error} `);
     }
@@ -82,11 +75,8 @@ export const UserBoard = (props) => {
 
   const handleWithdraw = async (updateIndex) => {
     try {
-      const DEXActor = Actor.createActor(DEXidlFactory, {
-        agent,
-        canisterId: DEXCanisterId,
-      });
-
+      const DEXActor = DEXCreateActor(DEXCanisterId, options);
+      // DEXからトークンを出金する
       const resultWithdraw
         = await DEXActor.withdraw(Principal.fromText(tokenCanisters[updateIndex].canisterId), TOKEN_AMOUNT);
       if (!resultWithdraw.Ok) {
@@ -96,19 +86,15 @@ export const UserBoard = (props) => {
       console.log(`resultWithdraw: ${resultWithdraw.Ok}`);
 
       updateUserToken(updateIndex);
-
     } catch (error) {
       console.log(`handleWithdraw: ${error} `);
     }
   };
 
+  // Faucetからトークンを取得する
   const handleFaucet = async (updateIndex) => {
     try {
-      const faucetActor = Actor.createActor(faucetFactory, {
-        agent,
-        canisterId: faucetCanisterId,
-      });
-
+      const faucetActor = faucetCreateActor(faucetCanisterId, options);
       const resultFaucet
         = await faucetActor.getToken(Principal.fromText(tokenCanisters[updateIndex].canisterId));
       if (!resultFaucet.Ok) {
@@ -118,7 +104,6 @@ export const UserBoard = (props) => {
       console.log(`resultFaucet: ${resultFaucet.Ok}`);
 
       updateUserToken(updateIndex);
-
     } catch (error) {
       console.log(`handleFaucet: ${error}`);
     }
@@ -126,9 +111,9 @@ export const UserBoard = (props) => {
 
   return (
     <>
-      <div className="token-list">
+      <div className="user-board">
         <h2>User</h2>
-        <li>principal ID: {currentPrincipalId}</li>
+        <li>principal ID: {userPrincipal}</li>
         <table>
           <tbody>
             <tr>
@@ -138,6 +123,7 @@ export const UserBoard = (props) => {
               <th>Fee</th>
               <th>Action</th>
             </tr>
+            {/* トークンのデータを一覧表示する */}
             {userTokens.map((token, index) => {
               return (
                 <tr key={`${index} : ${token.symbol} `}>
@@ -147,6 +133,7 @@ export const UserBoard = (props) => {
                   <td data-th="Fee">{token.fee}</td>
                   <td data-th="Action">
                     <div>
+                      {/* トークンに対して行う操作（Deposit / Withdraw / Faucet）のボタンを表示 */}
                       <button
                         className='btn-green'
                         onClick={() => handleDeposit(index)}
