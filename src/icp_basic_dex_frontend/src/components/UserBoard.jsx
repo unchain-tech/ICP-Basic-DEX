@@ -120,7 +120,7 @@ export const UserBoard = (props) => {
     <>
       <div className="user-board">
         <h2>User</h2>
-        <li>principal ID: {userPrincipal.toText()}</li>
+        <li>principal ID: {userPrincipal.toString()}</li>
         <table>
           <tbody>
             <tr>

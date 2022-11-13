@@ -2,7 +2,7 @@ import React from 'react';
 import { AuthClient } from '@dfinity/auth-client';
 import { HttpAgent } from '@dfinity/agent';
 import { canisterId as IICanisterID }
-  from '../../../declarations/internet_identity';
+  from '../../../declarations/internet_identity_div';
 
 export const Header = (props) => {
   const {
@@ -12,12 +12,14 @@ export const Header = (props) => {
     setUserPrincipal,
   } = props;
 
-  const handleSuccess = (authClient) => {
+  const handleSuccess = async (authClient) => {
     // 認証したユーザーの`identity`を取得
-    const identity = authClient.getIdentity();
+    const identity = await authClient.getIdentity();
 
     // 認証したユーザーの`principal`を取得
     const principal = identity.getPrincipal();
+
+    console.log(`User Principal: ${principal.toString()}`);
 
     // 取得した`identity`を使用して、ICと対話する`agent`を作成する
     const newAgent = new HttpAgent({ identity });
@@ -29,8 +31,9 @@ export const Header = (props) => {
     updateUserTokens(principal);
     // オーダー一覧を取得
     updateOrderList();
+
     // ユーザーのデータを保存
-    setUserPrincipal(principal.toText());
+    setUserPrincipal(principal);
     setAgent(newAgent);
   };
 
@@ -50,7 +53,9 @@ export const Header = (props) => {
     const authClient = await AuthClient.create();
     authClient.login({
       identityProvider: iiUrl,
-      onSuccess: handleSuccess(authClient),
+      onSuccess: async () => {
+        handleSuccess(authClient);
+      },
       onError: (error) => {
         console.error(`Login Failed: , ${error}`);
       }
@@ -60,7 +65,7 @@ export const Header = (props) => {
   return (
     <ul>
       <li>SIMPLE DEX</li>
-      <li style={{ float: 'right' }}>
+      <li className='btn-login'>
         <button
           onClick={handleLogin}>
           Login Internet Identity

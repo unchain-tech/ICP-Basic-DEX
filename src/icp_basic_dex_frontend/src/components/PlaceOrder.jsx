@@ -46,11 +46,11 @@ export const PlaceOrder = (props) => {
       const DEXActor = createActor(DEXCanisterId, options);
 
       // `from`に入力されたトークンシンボルに一致するトークンデータを、`tokens[]`から取得
-      const fromTokenCanister = tokens.find(e => e.tokenSymbol === order.from);
-      const fromPrincipal = fromTokenCanister.canisterId;
+      const fromToken = tokens.find(e => e.tokenSymbol === order.from);
+      const fromPrincipal = fromToken.canisterId;
       // `to`に入力されたトークンシンボルに一致するトークンデータを、`tokens[]`から取得
-      const toTokenCanister = tokens.find(e => e.tokenSymbol === order.to);
-      const toPrincipal = toTokenCanister.canisterId;
+      const toToken = tokens.find(e => e.tokenSymbol === order.to);
+      const toPrincipal = toToken.canisterId;
 
       const resultPlace
         = await DEXActor.placeOrder(
@@ -76,9 +76,7 @@ export const PlaceOrder = (props) => {
   return (
     <>
       <div className="place-order">
-        <div className="title">
-          <p>PLACE ORDER</p>
-        </div>
+        <p>PLACE ORDER</p>
         {/* オーダーを入力するフォームを表示 */}
         <form className="form" onSubmit={handleSubmitOrder} >
           <div>

@@ -47,13 +47,19 @@ const App = () => {
   const updateOrderList = async () => {
     const orders = await DEX.getOrders();
     const createdOrderList = orders.map((order) => {
+      const fromToken = tokens.find(
+        e => e.canisterId === order.from.toString()
+      );
+
       return {
         id: order.id,
         from: order.from,
-        fromSymbol: tokens.find(e => e.canisterId === order.from.toString()).tokenSymbol,
+        fromSymbol: fromToken.tokenSymbol,
         fromAmount: order.fromAmount,
         to: order.to,
-        toSymbol: tokens.find(e => e.canisterId === order.to.toString()).tokenSymbol,
+        toSymbol: tokens.find(
+          e => e.canisterId === order.to.toString()
+        ).tokenSymbol,
         toAmount: order.toAmount,
       }
     })
@@ -67,7 +73,7 @@ const App = () => {
       const resultAuthenticated = await authClient.isAuthenticated();
       // 認証済みであればPrincipalを取得
       if (resultAuthenticated) {
-        const identity = authClient.getIdentity();
+        const identity = await authClient.getIdentity();
         // ICと対話する`agent`を作成する
         const newAgent = new HttpAgent({ identity });
         // ローカル環境の`agent`はICの公開鍵を持っていないため、`fetchRootKey()`で鍵を取得する

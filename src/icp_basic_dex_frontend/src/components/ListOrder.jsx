@@ -1,6 +1,5 @@
 import React from 'react';
 
-import { Principal } from '@dfinity/principal';
 import {
   canisterId as DEXCanisterId,
   createActor
@@ -68,7 +67,6 @@ export const ListOrder = (props) => {
       console.log(`handleCancelOrder: ${error}`);
     }
   }
-
 
   return (
     <div className="list-order">

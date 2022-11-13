@@ -20,7 +20,7 @@ ul {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background-color: rgb(8, 2, 38);
+  background: rgb(8, 2, 38);
 }
 
 li {
@@ -65,6 +65,10 @@ td {
   margin: 4rem auto;
 }
 
+.btn-login {
+  float: right;
+}
+
 .btn-green {
   border: 1px solid rgb(0, 170, 105);
   color: rgb(0, 170, 105);
@@ -83,7 +87,7 @@ td {
 }
 
 .user-board {
-  background-color: rgb(41, 49, 79);
+  background: rgb(41, 49, 79);
   padding: 8px;
   margin-bottom: 30px;
   border-radius: 10px;
@@ -103,7 +107,7 @@ td {
 }
 
 .place-order {
-  background-color: rgb(41, 49, 79);
+  background: rgb(8, 2, 38);
   padding: 8px;
   border-radius: 10px;
   margin-bottom: 30px;
@@ -119,7 +123,6 @@ td {
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background: rgb(8, 2, 38);
   margin-bottom: 1rem;
   border-radius: 10px;
 }
@@ -167,7 +170,7 @@ td {
 }
 
 .list-order {
-  background-color: rgb(8, 2, 38);
+  background: rgb(8, 2, 38);
   padding: 8px;
   border-radius: 10px;
   margin-bottom: 30px;
