@@ -8,18 +8,11 @@ import T "types";
 shared (msg) actor class Faucet() = this {
   private type Token = Principal;
 
-  public type FaucetReceipt = {
-    #Ok : Nat;
-    #Err : {
-      #AlreadyGiven;
-      #FaucetFailure;
-      #InsufficientToken;
-    };
-  };
-
   private let TOTAL_FAUCET_AMOUNT : Nat = 100_000;
   private let FAUCET_AMOUNT : Nat = 1_000;
-  private stable let owner : Principal = msg.caller;
+  private let owner : Principal = msg.caller;
+
+  // アップグレード時にトークンを配布したユーザーを保存しておく`stable`変数
   private stable var faucetBookEntries : [var (Principal, [Token])] = [var];
 
   // ユーザーとトークンPrincipalをマッピング
@@ -30,7 +23,7 @@ shared (msg) actor class Faucet() = this {
     Principal.hash,
   );
 
-  public shared (msg) func getToken(token : Token) : async FaucetReceipt {
+  public shared (msg) func getToken(token : Token) : async T.FaucetReceipt {
     let faucet_receipt = await checkDistribution(msg.caller, token);
     switch (faucet_receipt) {
       case (#Err e) return #Err(e);
@@ -82,7 +75,7 @@ shared (msg) actor class Faucet() = this {
 
   // Faucetとしてトークンを配布しているかどうかを確認する
   // 配布可能なら`#Ok`、不可能なら`#Err`を返す
-  private func checkDistribution(user : Principal, token : Token) : async FaucetReceipt {
+  private func checkDistribution(user : Principal, token : Token) : async T.FaucetReceipt {
     // `Token` PrincipalでDIP20アクターのインスタンスを生成
     let dip20 = actor (Principal.toText(token)) : T.DIPInterface;
     let balance = await dip20.balanceOf(Principal.fromActor(this));
@@ -104,6 +97,8 @@ shared (msg) actor class Faucet() = this {
 
   // ===== UPGRADE =====
   system func preupgrade() {
+    // `faucet_book`に保存されているデータのサイズでArrayの初期化をする
+    // Principal.fromText()は空文字を入れるとエラーになるので、ここでは管理者のPrincipalを指す"aaaaa-aa"を指定
     faucetBookEntries := Array.init(faucet_book.size(), (Principal.fromText("aaaaa-aa"), []));
     var i = 0;
     for ((x, y) in faucet_book.entries()) {
@@ -113,6 +108,7 @@ shared (msg) actor class Faucet() = this {
   };
 
   system func postupgrade() {
+    // Arrayに保存したデータを`HashMap`に再構築する
     for ((key : Principal, value : [Token]) in faucetBookEntries.vals()) {
       faucet_book.put(key, value);
     };

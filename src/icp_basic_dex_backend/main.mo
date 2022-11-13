@@ -207,10 +207,9 @@ actor class Dex() = this {
     };
   };
 
-  // ===== UPGRADE METHODS =====
-  // アップグレード前に、ハッシュマップに保存したデータを安定したメモリに保存する。
+  // ===== UPGRADE =====
   system func preupgrade() {
-    // DEXに預けられたユーザーのトークンデータを`Array`に保存
+    // DEXに預けられたトークンデータを`Array`に保存
     balanceBookEntries := Array.init(balance_book.size(), (Principal.fromText("aaaaa-aa"), []));
     var i = 0;
     for ((x, y) in balance_book.entries()) {

@@ -1,23 +1,25 @@
 {
   "canisters": {
     "icp_basic_dex_backend": {
-      "main": "src/icp_basic_dex_backend/main.mo",
-      "type": "motoko"
+      "type": "motoko",
+      "main": "src/icp_basic_dex_backend/main.mo"
     },
     "faucet": {
-      "main": "src/faucet/main.mo",
-      "type": "motoko"
+      "type": "motoko",
+      "main": "src/faucet/main.mo"
     },
     "GoldDIP20": {
+      "type": "motoko",
       "main": "src/DIP20/motoko/src/token.mo"
     },
     "SilverDIP20": {
+      "type": "motoko",
       "main": "src/DIP20/motoko/src/token.mo"
     },
-    "internet_identity": {
+    "internet_identity_div": {
       "type": "custom",
-      "candid": "src/internet_identity/internet_identity.did",
-      "wasm": "src/internet_identity/internet_identity_dev.wasm"
+      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm",
+      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did"
     },
     "icp_basic_dex_frontend": {
       "dependencies": [

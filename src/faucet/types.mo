@@ -20,4 +20,14 @@ module {
     balanceOf : (who : Principal) -> async Nat;
     transfer : (to : Principal, value : Nat) -> async TxReceipt;
   };
+
+  // ===== FAUCET =====
+  public type FaucetReceipt = {
+    #Ok : Nat;
+    #Err : {
+      #AlreadyGiven;
+      #FaucetFailure;
+      #InsufficientToken;
+    };
+  };
 };

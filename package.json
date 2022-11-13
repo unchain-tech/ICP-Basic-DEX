@@ -13,7 +13,7 @@
     "prebuild": "npm run generate",
     "start": "webpack serve --mode development --env development",
     "prestart": "npm run generate",
-    "generate": "dfx generate GoldDIP20 && dfx generate SilverDIP20 && dfx generate faucet && dfx generate internet_identity && dfx generate icp_basic_dex_backend"
+    "generate": "dfx generate GoldDIP20 && dfx generate SilverDIP20 && dfx generate faucet && dfx generate internet_identity_div && dfx generate icp_basic_dex_backend"
   },
   "devDependencies": {
     "@babel/core": "^7.19.6",
