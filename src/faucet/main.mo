@@ -8,7 +8,6 @@ import T "types";
 shared (msg) actor class Faucet() = this {
   private type Token = Principal;
 
-  private let TOTAL_FAUCET_AMOUNT : Nat = 100_000;
   private let FAUCET_AMOUNT : Nat = 1_000;
   private let owner : Principal = msg.caller;
 
