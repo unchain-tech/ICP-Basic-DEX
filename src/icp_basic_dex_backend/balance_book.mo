@@ -14,6 +14,7 @@ module {
     var balance_book = HashMap.HashMap<Principal, HashMap.HashMap<T.Token, Nat>>(10, Principal.equal, Principal.hash);
 
     // ユーザーPrincipalに紐づいたトークンと残高を取得
+    // `postupgrade`を実行する際に使用される
     public func get(user : Principal) : ?HashMap.HashMap<T.Token, Nat> {
       return balance_book.get(user);
     };
