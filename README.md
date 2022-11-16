@@ -2,6 +2,11 @@
 
 The project is a decentralized exchange in the form of an order book.
 
+<img width="1724" alt="3_2_2" src="https://user-images.githubusercontent.com/60546319/201580863-eb5e745a-6b89-45cc-99a4-549af9ac717b.png">
+
+<img width="1720" alt="0_1_2" src="https://user-images.githubusercontent.com/60546319/201580932-1bb338ee-9044-4218-87ec-e7109efdef15.png">
+
+
 ## Running the project locally
 
 If you want to test your project locally, you can use the following commands:
