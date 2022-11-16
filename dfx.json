@@ -1,20 +1,20 @@
 {
   "canisters": {
     "icp_basic_dex_backend": {
-      "type": "motoko",
-      "main": "src/icp_basic_dex_backend/main.mo"
+      "main": "src/icp_basic_dex_backend/main.mo",
+      "type": "motoko"
     },
     "faucet": {
-      "type": "motoko",
-      "main": "src/faucet/main.mo"
+      "main": "src/faucet/main.mo",
+      "type": "motoko"
     },
     "GoldDIP20": {
-      "type": "motoko",
-      "main": "src/DIP20/motoko/src/token.mo"
+      "main": "src/DIP20/motoko/src/token.mo",
+      "type": "motoko"
     },
     "SilverDIP20": {
-      "type": "motoko",
-      "main": "src/DIP20/motoko/src/token.mo"
+      "main": "src/DIP20/motoko/src/token.mo",
+      "type": "motoko"
     },
     "internet_identity_div": {
       "type": "custom",
