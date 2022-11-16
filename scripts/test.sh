@@ -64,6 +64,9 @@ echo -n "deposit     >  " \
 echo -n "getBalance  >  " \
   && dfx canister call icp_basic_dex_backend getBalance '(principal '\"$USER1_PRINCIPAL\"', principal '\"$GoldDIP20_PRINCIPAL\"')'
 
+echo -e '#------ deposit { Err = variant { BalanceLow } } ------------'
+dfx canister call icp_basic_dex_backend deposit '(principal '\"$GoldDIP20_PRINCIPAL\"')'
+
 # depositをコールするuser2に切り替え
 echo -e
 dfx identity use user2
@@ -106,14 +109,12 @@ echo -n "getBalance(user1, G)  >  " \
 echo -n "getBalance(user1, S)  >  " \
   && dfx canister call icp_basic_dex_backend getBalance '(principal '\"$USER1_PRINCIPAL\"', principal '\"$SilverDIP20_PRINCIPAL\"')'
 
-
-
 # ===== TEST withdraw =====
 echo -e '\n\n#------ withdraw & delete order ------'
 dfx canister call icp_basic_dex_backend placeOrder '(principal '\"$GoldDIP20_PRINCIPAL\"', 500, principal '\"$SilverDIP20_PRINCIPAL\"', 500)'
 echo -n "getOrders   >  " \
   && dfx canister call icp_basic_dex_backend getOrders
-
+dfx identity use user1
 echo -n "withdraw    >  " \
   && dfx canister call icp_basic_dex_backend withdraw '(principal '\"$GoldDIP20_PRINCIPAL\"', 500)'
 echo -n "getOrders   >  " \
