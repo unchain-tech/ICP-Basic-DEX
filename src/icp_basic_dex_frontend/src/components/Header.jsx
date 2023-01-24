@@ -45,7 +45,7 @@ export const Header = (props) => {
       iiUrl = `http://localhost:4943/?canisterId=${IICanisterID}`;
     } else if (process.env.DFX_NETWORK === "ic") {
       // iiUrl = `https://${IICanisterID}.ic0.app`;
-      iiUrl = 'https://identity.ic0.app/#authorize'; // TODO: mainnetにデプロイしたときに問題ないかチェック
+      iiUrl = 'https://identity.ic0.app/#authorize';
     } else {
       iiUrl = `https://${IICanisterID}.dfinity.network`;
     }
