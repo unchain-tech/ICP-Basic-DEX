@@ -42,7 +42,7 @@ export const Header = (props) => {
     // ユーザー認証に使用するInternet IdentityのURLを決定する
     let iiUrl;
     if (process.env.DFX_NETWORK === "local") {
-      iiUrl = `http://localhost:8000/?canisterId=${IICanisterID}`;
+      iiUrl = `http://localhost:4943/?canisterId=${IICanisterID}`;
     } else if (process.env.DFX_NETWORK === "ic") {
       // iiUrl = `https://${IICanisterID}.ic0.app`;
       iiUrl = 'https://identity.ic0.app/#authorize'; // TODO: mainnetにデプロイしたときに問題ないかチェック
