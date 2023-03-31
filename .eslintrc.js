@@ -12,6 +12,7 @@ module.exports = {
   rules: {
     'no-lone-blocks': ['off'],
     'no-unused-vars': ['warn'],
+    'react/prop-types': ['off'],
   },
   settings: {
     react: {
