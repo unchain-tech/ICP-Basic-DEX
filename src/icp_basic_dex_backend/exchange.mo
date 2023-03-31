@@ -54,7 +54,7 @@ module {
       // 全ての売り注文から、from<->toが一致するものを探す
       for (order in orders.vals()) {
         if (
-          order.id != new_order.id and order.from == new_order.to and order.to == new_order.from and order.fromAmount == new_order.toAmount and order.toAmount == new_order.fromAmount,
+          order.id != new_order.id and order.from == new_order.to and order.to == new_order.from and order.fromAmount == new_order.toAmount and order.toAmount == new_order.fromAmount
         ) {
           processTrade(order, new_order);
         };

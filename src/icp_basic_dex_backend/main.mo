@@ -30,7 +30,7 @@ actor class Dex() = this {
   // 成功すると預けた量を、失敗するとエラー文を返す
   public shared (msg) func deposit(token : T.Token) : async T.DepositReceipt {
     Debug.print(
-      "Message caller: " # Principal.toText(msg.caller) # "| Deposit Token: " # Principal.toText(token),
+      "Message caller: " # Principal.toText(msg.caller) # "| Deposit Token: " # Principal.toText(token)
     );
 
     // `Token` PrincipalでDIP20アクターのインスタンスを生成

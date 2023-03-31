@@ -5,7 +5,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   color: rgb(178, 178, 178);
   background: rgb(39, 35, 75);
-  ;
 }
 
 img {
@@ -135,7 +134,7 @@ td {
   background: rgb(178, 178, 178);
 }
 
-.form>div {
+.form > div {
   display: flex;
   justify-content: center;
   align-items: center;

@@ -3,16 +3,13 @@ import React, { useState } from 'react';
 import { Principal } from '@dfinity/principal';
 import {
   canisterId as DEXCanisterId,
-  createActor
+  createActor,
 } from '../../../declarations/icp_basic_dex_backend';
 
 import { tokens } from '../utils/token';
 
 export const PlaceOrder = (props) => {
-  const {
-    agent,
-    updateOrderList,
-  } = props;
+  const { agent, updateOrderList } = props;
 
   // フォームに入力されたオーダーのデータを保存する
   const [order, setOrder] = useState({
@@ -20,7 +17,7 @@ export const PlaceOrder = (props) => {
     fromAmount: 0,
     to: '',
     toAmount: 0,
-  })
+  });
 
   // フォームに入力されたデータを取得して、`order`に保存する
   const handleChangeOrder = (event) => {
@@ -46,19 +43,18 @@ export const PlaceOrder = (props) => {
       const DEXActor = createActor(DEXCanisterId, options);
 
       // `from`に入力されたトークンシンボルに一致するトークンデータを、`tokens[]`から取得
-      const fromToken = tokens.find(e => e.tokenSymbol === order.from);
+      const fromToken = tokens.find((e) => e.tokenSymbol === order.from);
       const fromPrincipal = fromToken.canisterId;
       // `to`に入力されたトークンシンボルに一致するトークンデータを、`tokens[]`から取得
-      const toToken = tokens.find(e => e.tokenSymbol === order.to);
+      const toToken = tokens.find((e) => e.tokenSymbol === order.to);
       const toPrincipal = toToken.canisterId;
 
-      const resultPlace
-        = await DEXActor.placeOrder(
-          Principal.fromText(fromPrincipal),
-          Number(order.fromAmount),
-          Principal.fromText(toPrincipal),
-          Number(order.toAmount),
-        );
+      const resultPlace = await DEXActor.placeOrder(
+        Principal.fromText(fromPrincipal),
+        Number(order.fromAmount),
+        Principal.fromText(toPrincipal),
+        Number(order.toAmount),
+      );
       if (!resultPlace.Ok) {
         alert(`Error: ${Object.keys(resultPlace.Err)[0]}`);
         return;
@@ -67,7 +63,6 @@ export const PlaceOrder = (props) => {
 
       // オーダーが登録されたので、一覧を更新する
       updateOrderList();
-
     } catch (error) {
       console.log(`handleSubmitOrder: ${error} `);
     }
@@ -78,7 +73,7 @@ export const PlaceOrder = (props) => {
       <div className="place-order">
         <p>PLACE ORDER</p>
         {/* オーダーを入力するフォームを表示 */}
-        <form className="form" onSubmit={handleSubmitOrder} >
+        <form className="form" onSubmit={handleSubmitOrder}>
           <div>
             <div>
               <label>From</label>
@@ -86,7 +81,8 @@ export const PlaceOrder = (props) => {
                 name="from"
                 type="from"
                 onChange={handleChangeOrder}
-                required>
+                required
+              >
                 <option value="">Select token</option>
                 <option value="TGLD">TGLD</option>
                 <option value="TSLV">TSLV</option>
@@ -106,11 +102,7 @@ export const PlaceOrder = (props) => {
             </div>
             <div>
               <label>To</label>
-              <select
-                name="to"
-                type="to"
-                onChange={handleChangeOrder}
-                required>
+              <select name="to" type="to" onChange={handleChangeOrder} required>
                 <option value="">Select token</option>
                 <option value="TGLD">TGLD</option>
                 <option value="TSLV">TSLV</option>
@@ -126,14 +118,11 @@ export const PlaceOrder = (props) => {
               />
             </div>
           </div>
-          <button
-            className='btn-green'
-            type="submit"
-          >
+          <button className="btn-green" type="submit">
             Submit Order
           </button>
         </form>
       </div>
     </>
-  )
+  );
 };

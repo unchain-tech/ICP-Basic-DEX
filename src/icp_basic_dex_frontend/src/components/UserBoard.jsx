@@ -4,70 +4,69 @@ import { Principal } from '@dfinity/principal';
 import {
   canisterId as DEXCanisterId,
   createActor as DEXCreateActor,
-  icp_basic_dex_backend as DEX
+  icp_basic_dex_backend as DEX,
 } from '../../../declarations/icp_basic_dex_backend';
 import {
   canisterId as faucetCanisterId,
-  createActor as faucetCreateActor
+  createActor as faucetCreateActor,
 } from '../../../declarations/faucet';
 
 import { tokens } from '../utils/token';
 
 export const UserBoard = (props) => {
-  const {
-    agent,
-    userPrincipal,
-    userTokens,
-    setUserTokens,
-  } = props;
+  const { agent, userPrincipal, userTokens, setUserTokens } = props;
 
   const TOKEN_AMOUNT = 500;
 
   const options = {
     agent: agent,
-  }
+  };
 
   // ユーザーボード上のトークンデータを更新する
   const updateUserToken = async (updateIndex) => {
     // ユーザーが保有するトークン量を取得
-    const balance
-      = await tokens[updateIndex].canister.balanceOf(userPrincipal);
+    const balance = await tokens[updateIndex].canister.balanceOf(userPrincipal);
     // ユーザーがDEXに預けたトークン量を取得
-    const dexBalance
-      = await DEX.getBalance(
-        userPrincipal,
-        Principal.fromText(tokens[updateIndex].canisterId))
+    const dexBalance = await DEX.getBalance(
+      userPrincipal,
+      Principal.fromText(tokens[updateIndex].canisterId),
+    );
 
     setUserTokens(
-      userTokens.map((userToken, index) => (
-        index === updateIndex ? {
-          symbol: userToken.symbol,
-          balance: balance.toString(),
-          dexBalance: dexBalance.toString(),
-          fee: userToken.fee,
-        } : userToken))
+      userTokens.map((userToken, index) =>
+        index === updateIndex
+          ? {
+              symbol: userToken.symbol,
+              balance: balance.toString(),
+              dexBalance: dexBalance.toString(),
+              fee: userToken.fee,
+            }
+          : userToken,
+      ),
     );
-  }
+  };
 
   const handleDeposit = async (updateIndex) => {
     try {
       const DEXActor = DEXCreateActor(DEXCanisterId, options);
-      const tokenActor
-        = tokens[updateIndex].createActor(
-          tokens[updateIndex].canisterId,
-          options
-        );
+      const tokenActor = tokens[updateIndex].createActor(
+        tokens[updateIndex].canisterId,
+        options,
+      );
 
       // ユーザーの代わりにDEXがトークンを転送することを承認する
-      const resultApprove
-        = await tokenActor.approve(Principal.fromText(DEXCanisterId), TOKEN_AMOUNT);
+      const resultApprove = await tokenActor.approve(
+        Principal.fromText(DEXCanisterId),
+        TOKEN_AMOUNT,
+      );
       if (!resultApprove.Ok) {
         alert(`Error: ${Object.keys(resultApprove.Err)[0]}`);
         return;
       }
       // DEXにトークンを入金する
-      const resultDeposit
-        = await DEXActor.deposit(Principal.fromText(tokens[updateIndex].canisterId));
+      const resultDeposit = await DEXActor.deposit(
+        Principal.fromText(tokens[updateIndex].canisterId),
+      );
       if (!resultDeposit.Ok) {
         alert(`Error: ${Object.keys(resultDeposit.Err)[0]}`);
         return;
@@ -84,8 +83,10 @@ export const UserBoard = (props) => {
     try {
       const DEXActor = DEXCreateActor(DEXCanisterId, options);
       // DEXからトークンを出金する
-      const resultWithdraw
-        = await DEXActor.withdraw(Principal.fromText(tokens[updateIndex].canisterId), TOKEN_AMOUNT);
+      const resultWithdraw = await DEXActor.withdraw(
+        Principal.fromText(tokens[updateIndex].canisterId),
+        TOKEN_AMOUNT,
+      );
       if (!resultWithdraw.Ok) {
         alert(`Error: ${Object.keys(resultWithdraw.Err)[0]}`);
         return;
@@ -102,8 +103,9 @@ export const UserBoard = (props) => {
   const handleFaucet = async (updateIndex) => {
     try {
       const faucetActor = faucetCreateActor(faucetCanisterId, options);
-      const resultFaucet
-        = await faucetActor.getToken(Principal.fromText(tokens[updateIndex].canisterId));
+      const resultFaucet = await faucetActor.getToken(
+        Principal.fromText(tokens[updateIndex].canisterId),
+      );
       if (!resultFaucet.Ok) {
         alert(`Error: ${Object.keys(resultFaucet.Err)[0]}`);
         return;
@@ -114,7 +116,7 @@ export const UserBoard = (props) => {
     } catch (error) {
       console.log(`handleFaucet: ${error}`);
     }
-  }
+  };
 
   return (
     <>
@@ -142,19 +144,19 @@ export const UserBoard = (props) => {
                     <div>
                       {/* トークンに対して行う操作（Deposit / Withdraw / Faucet）のボタンを表示 */}
                       <button
-                        className='btn-green'
+                        className="btn-green"
                         onClick={() => handleDeposit(index)}
                       >
                         Deposit
                       </button>
                       <button
-                        className='btn-red'
+                        className="btn-red"
                         onClick={() => handleWithdraw(index)}
                       >
                         Withdraw
                       </button>
                       <button
-                        className='btn-blue'
+                        className="btn-blue"
                         onClick={() => handleFaucet(index)}
                       >
                         Faucet
@@ -168,5 +170,5 @@ export const UserBoard = (props) => {
         </table>
       </div>
     </>
-  )
+  );
 };
