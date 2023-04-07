@@ -3,5 +3,5 @@
   "tabWidth": 2,
   "singleQuote": true,
   "semi": true,
-  "plugins": ["prettier-plugin-motoko"]
+  "plugins": ["prettier-plugin-motoko", "@trivago/prettier-plugin-sort-imports"]
 }
