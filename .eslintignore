@@ -1,1 +1,4 @@
-src/DIP20
+**/dist
+**/DIP20
+**/internet_identity_div
+src/declarations

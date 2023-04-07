@@ -13,6 +13,8 @@ module.exports = {
     'no-lone-blocks': ['off'],
     'no-unused-vars': ['warn'],
     'react/prop-types': ['off'],
+    'react/jsx-uses-react': ['off'],
+    'react/react-in-jsx-scope': ['off'],
   },
   settings: {
     react: {
