@@ -17,9 +17,6 @@ git clone --recursive git@github.com:unchain-dev/icp_basic_dex.git
 # Install packages.
 npm install
 
-# Launch the canister execution environment.
-dfx start --clean --background
-
 # Deploys your canisters to the replica and generates your candid interface.
 bash ./scripts/deploy_local.sh
 ```
