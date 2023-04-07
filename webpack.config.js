@@ -1,7 +1,8 @@
-const path = require("path");
-const webpack = require("webpack");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const TerserPlugin = require("terser-webpack-plugin");
+const path = require('path');
+const webpack = require('webpack');
+const ESLintPlugin = require('eslint-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 
 let localEnv = true;
 let network = 'local';
@@ -11,65 +12,65 @@ function initCanisterEnv() {
 
   try {
     localCanisters = require(path.resolve(
-      ".dfx",
-      "local",
-      "canister_ids.json"
+      '.dfx',
+      'local',
+      'canister_ids.json',
     ));
   } catch (error) {
-    console.log("No local canister_ids.json found. Continuing production");
+    console.log('No local canister_ids.json found. Continuing production');
   }
   try {
-    prodCanisters = require(path.resolve("canister_ids.json"));
+    prodCanisters = require(path.resolve('canister_ids.json'));
     localEnv = false;
   } catch (error) {
-    console.log("No production canister_ids.json found. Continuing with local");
+    console.log('No production canister_ids.json found. Continuing with local');
   }
 
-  network = process.env.NODE_ENV === "production" && !localEnv ? "ic" : "local";
+  network = process.env.NODE_ENV === 'production' && !localEnv ? 'ic' : 'local';
 
-  const canisterConfig = network === "local" ? localCanisters : prodCanisters;
+  const canisterConfig = network === 'local' ? localCanisters : prodCanisters;
 
   return Object.entries(canisterConfig).reduce((prev, current) => {
     const [canisterName, canisterDetails] = current;
-    prev[canisterName.toUpperCase() + "_CANISTER_ID"] =
+    prev[canisterName.toUpperCase() + '_CANISTER_ID'] =
       canisterDetails[network];
     return prev;
   }, {});
 }
 const canisterEnvVariables = initCanisterEnv();
 
-const isDevelopment = process.env.NODE_ENV !== "production";
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
-const frontendDirectory = "icp_basic_dex_frontend";
+const frontendDirectory = 'icp_basic_dex_frontend';
 
-const frontend_entry = path.join("src", frontendDirectory, "src", "index.html");
+const frontendEntry = path.join('src', frontendDirectory, 'src', 'index.html');
 
 module.exports = {
-  target: "web",
-  mode: isDevelopment ? "development" : "production",
+  target: 'web',
+  mode: isDevelopment ? 'development' : 'production',
   entry: {
     // The frontend.entrypoint points to the HTML file for this build, so we need
     // to replace the extension to `.js`.
-    index: path.join(__dirname, frontend_entry).replace(/\.html$/, ".js"),
+    index: path.join(__dirname, frontendEntry).replace(/\.html$/, '.js'),
   },
-  devtool: isDevelopment ? "source-map" : false,
+  devtool: isDevelopment ? 'source-map' : false,
   optimization: {
     minimize: !isDevelopment,
     minimizer: [new TerserPlugin()],
   },
   resolve: {
-    extensions: [".js", ".ts", ".jsx", ".tsx"],
+    extensions: ['.js', '.ts', '.jsx', '.tsx'],
     fallback: {
-      assert: require.resolve("assert/"),
-      buffer: require.resolve("buffer/"),
-      events: require.resolve("events/"),
-      stream: require.resolve("stream-browserify/"),
-      util: require.resolve("util/"),
+      assert: require.resolve('assert/'),
+      buffer: require.resolve('buffer/'),
+      events: require.resolve('events/'),
+      stream: require.resolve('stream-browserify/'),
+      util: require.resolve('util/'),
     },
   },
   output: {
-    filename: "index.js",
-    path: path.join(__dirname, "dist", frontendDirectory),
+    filename: 'index.js',
+    path: path.join(__dirname, 'dist', frontendDirectory),
   },
 
   // Depending in the language or framework you are using for
@@ -83,30 +84,41 @@ module.exports = {
         test: /\.(js|jsx)$/,
         exclude: /node_modules/,
         use: {
-          loader: "babel-loader",
+          loader: 'babel-loader',
           options: {
-            presets: ['@babel/preset-react']
-          }
-        }
+            presets: [
+              [
+                '@babel/preset-react',
+                {
+                  runtime: 'automatic',
+                },
+              ],
+            ],
+          },
+        },
       },
       //    { test: /\.(ts|tsx|jsx)$/, loader: "ts-loader" },
-      { test: /\.css$/, use: ['style-loader', 'css-loader'] }
+      { test: /\.css$/, use: ['style-loader', 'css-loader'] },
     ],
   },
 
   plugins: [
     new HtmlWebpackPlugin({
-      template: path.join(__dirname, frontend_entry),
+      template: path.join(__dirname, frontendEntry),
       cache: false,
     }),
     new webpack.EnvironmentPlugin({
       DFX_NETWORK: network,
-      NODE_ENV: "development",
+      NODE_ENV: 'development',
       ...canisterEnvVariables,
     }),
     new webpack.ProvidePlugin({
-      Buffer: [require.resolve("buffer/"), "Buffer"],
-      process: require.resolve("process/browser"),
+      Buffer: [require.resolve('buffer/'), 'Buffer'],
+      process: require.resolve('process/browser'),
+    }),
+    new ESLintPlugin({
+      extensions: ['.js', '.jsx'],
+      exclude: 'node_modules',
     }),
   ],
   // proxy /api to port 4943 during development.
@@ -114,17 +126,17 @@ module.exports = {
   devServer: {
     historyApiFallback: true,
     proxy: {
-      "/api": {
-        target: "http://127.0.0.1:4943",
+      '/api': {
+        target: 'http://127.0.0.1:4943',
         changeOrigin: true,
         pathRewrite: {
-          "^/api": "/api",
+          '^/api': '/api',
         },
       },
     },
-    static: path.resolve(__dirname, "src", frontendDirectory, "assets"),
+    static: path.resolve(__dirname, 'src', frontendDirectory, 'assets'),
     hot: true,
-    watchFiles: [path.resolve(__dirname, "src", frontendDirectory)],
+    watchFiles: [path.resolve(__dirname, 'src', frontendDirectory)],
     liveReload: true,
   },
 };

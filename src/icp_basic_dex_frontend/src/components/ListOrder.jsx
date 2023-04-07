@@ -1,39 +1,31 @@
-import React from 'react';
-
 import {
   canisterId as DEXCanisterId,
-  createActor
+  createActor,
 } from '../../../declarations/icp_basic_dex_backend';
 
 export const ListOrder = (props) => {
-  const {
-    agent,
-    userPrincipal,
-    orderList,
-    updateOrderList,
-    updateUserTokens
-  } = props;
+  const { agent, userPrincipal, orderList, updateOrderList, updateUserTokens } =
+    props;
 
   const createDEXActor = () => {
     // ログインしているユーザーを設定する
     const options = {
-      agent: agent,
-    }
+      agent,
+    };
     return createActor(DEXCanisterId, options);
-  }
+  };
 
   // オーダーの購入を実行する
   const handleBuyOrder = async (order) => {
     try {
       const DEXActor = createDEXActor();
       // オーダーのデータを`placeOrder()`に渡す
-      const resultPlace
-        = await DEXActor.placeOrder(
-          order.to,
-          Number(order.toAmount),
-          order.from,
-          Number(order.fromAmount),
-        );
+      const resultPlace = await DEXActor.placeOrder(
+        order.to,
+        Number(order.toAmount),
+        order.from,
+        Number(order.fromAmount),
+      );
       if (!resultPlace.Ok) {
         alert(`Error: ${Object.keys(resultPlace.Err)[0]}`);
         return;
@@ -43,10 +35,10 @@ export const ListOrder = (props) => {
       // ユーザーボード上のトークンデータを更新する
       updateUserTokens(userPrincipal);
 
-      console.log("Trade Successful!");
+      console.log('Trade Successful!');
     } catch (error) {
       console.log(`handleBuyOrder: ${error} `);
-    };
+    }
   };
 
   // オーダーのキャンセルを実行する
@@ -66,7 +58,7 @@ export const ListOrder = (props) => {
     } catch (error) {
       console.log(`handleCancelOrder: ${error}`);
     }
-  }
+  };
 
   return (
     <div className="list-order">
@@ -84,7 +76,7 @@ export const ListOrder = (props) => {
           {/* オーダー一覧を表示する */}
           {orderList.map((order, index) => {
             return (
-              <tr key={`${index}: ${order.token} `} >
+              <tr key={`${index}: ${order.token} `}>
                 <td data-th="From">{order.fromSymbol}</td>
                 <td data-th="Amount">{order.fromAmount.toString()}</td>
                 <td>→</td>
@@ -96,11 +88,15 @@ export const ListOrder = (props) => {
                     <button
                       className="btn-green"
                       onClick={() => handleBuyOrder(order)}
-                    >Buy</button>
+                    >
+                      Buy
+                    </button>
                     <button
                       className="btn-red"
                       onClick={() => handleCancelOrder(order.id)}
-                    >Cancel</button>
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -108,6 +104,6 @@ export const ListOrder = (props) => {
           })}
         </tbody>
       </table>
-    </div >
+    </div>
   );
-}
+};

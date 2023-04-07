@@ -1,12 +1,12 @@
 import {
   canisterId as GoldDIP20canisterId,
   createActor as GoldDIP20CreateActor,
-  GoldDIP20
+  GoldDIP20,
 } from '../../../declarations/GoldDIP20';
 import {
   canisterId as SilverDIP20canisterId,
   createActor as SilverDIP20CreateActor,
-  SilverDIP20
+  SilverDIP20,
 } from '../../../declarations/SilverDIP20';
 
 // DEX上で扱うトークンのデータを配列に格納
