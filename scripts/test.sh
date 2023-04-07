@@ -17,17 +17,17 @@ compare_result() {
 
 TEST_STATUS=0
 
-# ===== SETUP =====
+# ===== 準備 =====
 dfx stop
 rm -rf .dfx
 dfx start --clean --background
-dfx identity use default
 
+# ユーザーの準備
+dfx identity use default
 export ROOT_PRINCIPAL=$(dfx identity get-principal)
 
-# ===== SETUP Test User =====
-# `||`はOR演算子。左側のコマンドが失敗（終了ステータス0以外）した場合、右側のコマンドが実行されます。
-# 既にuser1が存在する場合、`dfx identity new user1`コマンドは実行エラーとなってしまうので、対策として`|| true`としています。
+# `||（OR演算子）`：左側のコマンドが失敗（終了ステータス0以外）した場合、右側のコマンドが実行される
+## 既にuser1が存在する場合、`dfx identity new user1`コマンドは実行エラーとなってしまうので、対策として`|| true`を使用
 dfx identity new user1 --disable-encryption || true
 dfx identity use user1
 export USER1_PRINCIPAL=$(dfx identity get-principal)
@@ -38,27 +38,27 @@ export USER2_PRINCIPAL=$(dfx identity get-principal)
 
 dfx identity use default
 
-# ===== SETUP Token Canister =====
+# Tokenキャニスターの準備
 dfx deploy GoldDIP20 --argument='("Token Gold Logo", "Token Silver", "TGLD", 8, 10_000_000_000_000_000, principal '\"$ROOT_PRINCIPAL\"', 0)'
 dfx deploy SilverDIP20 --argument='("Token Silver Logo", "Token Silver", "TSLV", 8, 10_000_000_000_000_000, principal '\"$ROOT_PRINCIPAL\"', 0)'
 export GoldDIP20_PRINCIPAL=$(dfx canister id GoldDIP20)
 export SilverDIP20_PRINCIPAL=$(dfx canister id SilverDIP20)
 
-# ===== SETUP Faucet Canister =====
+# Faucetキャニスターの準備
 dfx deploy faucet
 export FAUCET_PRINCIPAL=$(dfx canister id faucet)
 
-# トークンをfaucetキャニスターにプールする
+## トークンをfaucetキャニスターにプールする
 dfx canister call GoldDIP20 mint '(principal '\"$FAUCET_PRINCIPAL\"', 100_000)'
 dfx canister call SilverDIP20 mint '(principal '\"$FAUCET_PRINCIPAL\"', 100_000)'
 
-# ===== SETUP icp_basic_dex_backend Canister =====
+# icp_basic_dex_backendキャニスターの準備
 dfx deploy icp_basic_dex_backend
 export DEX_PRINCIPAL=$(dfx canister id icp_basic_dex_backend)
 
 dfx identity use user1
 
-# ===== TEST =====
+# ===== テスト =====
 echo '===== getToken ====='
 EXPECT="(variant { Ok = 1_000 : nat })"
 RESULT=`dfx canister call faucet getToken '(principal '\"$GoldDIP20_PRINCIPAL\"')'` 
@@ -70,7 +70,7 @@ compare_result "return Err AlreadyGiven" "$EXPECT" "$RESULT" || TEST_STATUS=1
 
 echo '===== deposit ====='
 # approveをコールして、DEXがユーザーの代わりにdepositすることを許可する
-dfx canister call GoldDIP20 approve '(principal '\"$DEX_PRINCIPAL\"', 1_000)'
+dfx canister call GoldDIP20 approve '(principal '\"$DEX_PRINCIPAL\"', 1_000)' > /dev/null
 EXPECT="(variant { Ok = 1_000 : nat })"
 RESULT=`dfx canister call icp_basic_dex_backend deposit '(principal '\"$GoldDIP20_PRINCIPAL\"')'` 
 compare_result "return 1_000" "$EXPECT" "$RESULT" || TEST_STATUS=1
@@ -116,15 +116,33 @@ EXPECT="(variant { Err = variant { OrderBookFull } })"
 RESULT=`dfx canister call icp_basic_dex_backend placeOrder '(principal '\"$GoldDIP20_PRINCIPAL\"', 100, principal '\"$SilverDIP20_PRINCIPAL\"', 100)'`
 compare_result "return Err OrderBookFull" "$EXPECT" "$RESULT" || TEST_STATUS=1
 
+echo '===== cancelOrder ====='
+EXPECT="(variant { Ok = 1 : nat32 })"
+RESULT=`dfx canister call icp_basic_dex_backend cancelOrder '(1)'`
+compare_result "return cancel result" "$EXPECT" "$RESULT" || TEST_STATUS=1
+
+# 存在しないオーダーの削除を行うと、エラーが返ってくることを確認する
+EXPECT="(variant { Err = variant { NotExistingOrder } })"
+RESULT=`dfx canister call icp_basic_dex_backend cancelOrder '(1)'`
+compare_result "return Err NotExistingOrder" "$EXPECT" "$RESULT" || TEST_STATUS=1
+
+# オーダーのオーナーではないユーザーが削除しようとするとエラーを出す
+dfx canister call icp_basic_dex_backend placeOrder '(principal '\"$GoldDIP20_PRINCIPAL\"', 100, principal '\"$SilverDIP20_PRINCIPAL\"', 100)' > /dev/null
+# オーダーのオーナーではないuser2に切り替え、削除を行う
+dfx identity use user2
+EXPECT="(variant { Err = variant { NotAllowed } })"
+RESULT=`dfx canister call icp_basic_dex_backend cancelOrder '(2)'`
+compare_result "return Err NotAllowed" "$EXPECT" "$RESULT" || TEST_STATUS=1
+
 # ===== 取引機能テストの準備 =====
 # オーダーを購入するuser2に切り替える
 dfx identity use user2
 # トークンを付与する
 dfx canister call faucet getToken '(principal '\"$SilverDIP20_PRINCIPAL\"')'
-dfx canister call SilverDIP20 approve '(principal '\"$DEX_PRINCIPAL\"', 1_000)'
-dfx canister call icp_basic_dex_backend deposit '(principal '\"$SilverDIP20_PRINCIPAL\"')'
+dfx canister call SilverDIP20 approve '(principal '\"$DEX_PRINCIPAL\"', 1_000)' > /dev/null
+dfx canister call icp_basic_dex_backend deposit '(principal '\"$SilverDIP20_PRINCIPAL\"')' > /dev/null
 # user1が出したオーダーを購入するために`placeOrder`を実行する
-dfx canister call icp_basic_dex_backend placeOrder '(principal '\"$SilverDIP20_PRINCIPAL\"', 100, principal '\"$GoldDIP20_PRINCIPAL\"', 100)'
+dfx canister call icp_basic_dex_backend placeOrder '(principal '\"$SilverDIP20_PRINCIPAL\"', 100, principal '\"$GoldDIP20_PRINCIPAL\"', 100)' > /dev/null
 # ============================
 
 # 取引が成立してオーダーが削除されていることを確認する
@@ -153,8 +171,8 @@ compare_result "return 100" "$EXPECT" "$RESULT" || TEST_STATUS=1
 
 echo '===== withdraw ====='
 # [GoldDIP20 500 -> SilverDIP20 500]のオーダーを出す
-# DEXキャニスターからトークンを引き出した後、残高不足のためオーダーが削除されることを確認するためです。
-dfx canister call icp_basic_dex_backend placeOrder '(principal '\"$GoldDIP20_PRINCIPAL\"', 500, principal '\"$SilverDIP20_PRINCIPAL\"', 500)'
+## DEXキャニスターからトークンを引き出した後、残高不足のためオーダーが削除されることを確認するため
+dfx canister call icp_basic_dex_backend placeOrder '(principal '\"$GoldDIP20_PRINCIPAL\"', 500, principal '\"$SilverDIP20_PRINCIPAL\"', 500)' > /dev/null
 
 dfx identity use user1
 EXPECT="(variant { Ok = 500 : nat })"
@@ -176,11 +194,11 @@ dfx identity remove user1
 dfx identity remove user2
 dfx stop
 
-# テスト結果の確認
+# ===== テスト結果の確認 =====
 if [ $TEST_STATUS -eq 0 ]; then
-  echo "PASS"
+  echo '"PASS"'
   exit 0
 else
-  echo "FAIL"
+  echo '"FAIL"'
   exit 1
 fi
