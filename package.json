@@ -68,6 +68,7 @@
     "prettier": "prettier --check --ignore-unknown --no-error-on-unmatched-pattern --ignore-path .prettierignore .",
     "prettier:fix": "prettier --write --ignore-unknown --no-error-on-unmatched-pattern --ignore-path .prettierignore .",
     "lint": "eslint .",
-    "lint:fix": "eslint --fix ."
+    "lint:fix": "eslint --fix .",
+    "test": "bash ./scripts/test.sh"
   }
 }
