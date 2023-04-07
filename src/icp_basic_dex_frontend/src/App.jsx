@@ -1,16 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import { icp_basic_dex_backend as DEX } from '../../declarations/icp_basic_dex_backend';
 import './App.css';
-
+import { Header } from './components/Header';
+import { ListOrder } from './components/ListOrder';
+import { PlaceOrder } from './components/PlaceOrder';
+import { UserBoard } from './components/UserBoard';
+import { tokens } from './utils/token';
 import { HttpAgent } from '@dfinity/agent';
 import { AuthClient } from '@dfinity/auth-client';
 import { Principal } from '@dfinity/principal';
-
-import { icp_basic_dex_backend as DEX } from '../../declarations/icp_basic_dex_backend';
-import { Header } from './components/Header';
-import { UserBoard } from './components/UserBoard';
-import { PlaceOrder } from './components/PlaceOrder';
-import { ListOrder } from './components/ListOrder';
-import { tokens } from './utils/token';
+import { useEffect, useState } from 'react';
 
 const App = () => {
   const [agent, setAgent] = useState();

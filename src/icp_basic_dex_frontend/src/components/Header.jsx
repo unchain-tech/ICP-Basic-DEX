@@ -1,7 +1,6 @@
-import React from 'react';
-import { AuthClient } from '@dfinity/auth-client';
-import { HttpAgent } from '@dfinity/agent';
 import { canisterId as IICanisterID } from '../../../declarations/internet_identity_div';
+import { HttpAgent } from '@dfinity/agent';
+import { AuthClient } from '@dfinity/auth-client';
 
 export const Header = (props) => {
   const { updateOrderList, updateUserTokens, setAgent, setUserPrincipal } =

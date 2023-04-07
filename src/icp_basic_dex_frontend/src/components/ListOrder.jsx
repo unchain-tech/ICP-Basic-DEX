@@ -1,5 +1,3 @@
-import React from 'react';
-
 import {
   canisterId as DEXCanisterId,
   createActor,
@@ -12,7 +10,7 @@ export const ListOrder = (props) => {
   const createDEXActor = () => {
     // ログインしているユーザーを設定する
     const options = {
-      agent: agent,
+      agent,
     };
     return createActor(DEXCanisterId, options);
   };

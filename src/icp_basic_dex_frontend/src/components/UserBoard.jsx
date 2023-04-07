@@ -1,17 +1,14 @@
-import React from 'react';
-
-import { Principal } from '@dfinity/principal';
+import {
+  canisterId as faucetCanisterId,
+  createActor as faucetCreateActor,
+} from '../../../declarations/faucet';
 import {
   canisterId as DEXCanisterId,
   createActor as DEXCreateActor,
   icp_basic_dex_backend as DEX,
 } from '../../../declarations/icp_basic_dex_backend';
-import {
-  canisterId as faucetCanisterId,
-  createActor as faucetCreateActor,
-} from '../../../declarations/faucet';
-
 import { tokens } from '../utils/token';
+import { Principal } from '@dfinity/principal';
 
 export const UserBoard = (props) => {
   const { agent, userPrincipal, userTokens, setUserTokens } = props;
@@ -19,7 +16,7 @@ export const UserBoard = (props) => {
   const TOKEN_AMOUNT = 500;
 
   const options = {
-    agent: agent,
+    agent,
   };
 
   // ユーザーボード上のトークンデータを更新する

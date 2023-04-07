@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
-
-import { Principal } from '@dfinity/principal';
 import {
   canisterId as DEXCanisterId,
   createActor,
 } from '../../../declarations/icp_basic_dex_backend';
-
 import { tokens } from '../utils/token';
+import { Principal } from '@dfinity/principal';
+import { useState } from 'react';
 
 export const PlaceOrder = (props) => {
   const { agent, updateOrderList } = props;
@@ -38,7 +36,7 @@ export const PlaceOrder = (props) => {
     try {
       // ログインしているユーザーがDEXとやりとりを行うためにアクターを作成する
       const options = {
-        agent: agent,
+        agent,
       };
       const DEXActor = createActor(DEXCanisterId, options);
 
