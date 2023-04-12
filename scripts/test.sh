@@ -59,6 +59,7 @@ export DEX_PRINCIPAL=$(dfx canister id icp_basic_dex_backend)
 dfx identity use user1
 
 # ===== テスト =====
+# user1がトークンを取得する
 echo '===== getToken ====='
 EXPECT="(variant { Ok = 1_000 : nat })"
 RESULT=`dfx canister call faucet getToken '(principal '\"$GoldDIP20_PRINCIPAL\"')'` 
@@ -69,7 +70,7 @@ RESULT=`dfx canister call faucet getToken '(principal '\"$GoldDIP20_PRINCIPAL\"'
 compare_result "return Err AlreadyGiven" "$EXPECT" "$RESULT" || TEST_STATUS=1
 
 echo '===== deposit ====='
-# approveをコールして、DEXがユーザーの代わりにdepositすることを許可する
+# approveをコールして、DEXがuser1の代わりにdepositすることを許可する
 dfx canister call GoldDIP20 approve '(principal '\"$DEX_PRINCIPAL\"', 1_000)' > /dev/null
 EXPECT="(variant { Ok = 1_000 : nat })"
 RESULT=`dfx canister call icp_basic_dex_backend deposit '(principal '\"$GoldDIP20_PRINCIPAL\"')'` 
@@ -171,10 +172,9 @@ compare_result "return 100" "$EXPECT" "$RESULT" || TEST_STATUS=1
 
 echo '===== withdraw ====='
 # [GoldDIP20 500 -> SilverDIP20 500]のオーダーを出す
-## DEXキャニスターからトークンを引き出した後、残高不足のためオーダーが削除されることを確認するため
+## DEXキャニスターからトークンを引き出した後、残高不足(900 - 500 - 500 = -100)のためオーダーが削除されることを確認するため
 dfx canister call icp_basic_dex_backend placeOrder '(principal '\"$GoldDIP20_PRINCIPAL\"', 500, principal '\"$SilverDIP20_PRINCIPAL\"', 500)' > /dev/null
 
-dfx identity use user1
 EXPECT="(variant { Ok = 500 : nat })"
 RESULT=`dfx canister call icp_basic_dex_backend withdraw '(principal '\"$GoldDIP20_PRINCIPAL\"', 500)'`
 compare_result "return 500" "$EXPECT" "$RESULT" || TEST_STATUS=1
@@ -184,6 +184,7 @@ EXPECT="(vec {})"
 RESULT=`dfx canister call icp_basic_dex_backend getOrders`
 compare_result "return (vec {})" "$EXPECT" "$RESULT" || TEST_STATUS=1
 
+# 残高以上の引き出しを行う
 EXPECT="(variant { Err = variant { BalanceLow } })"
 RESULT=`dfx canister call icp_basic_dex_backend withdraw '(principal '\"$GoldDIP20_PRINCIPAL\"', 1000)'`
 compare_result "return Err BalanceLow" "$EXPECT" "$RESULT" || TEST_STATUS=1
@@ -195,6 +196,7 @@ dfx identity remove user2
 dfx stop
 
 # ===== テスト結果の確認 =====
+echo '===== Result ====='
 if [ $TEST_STATUS -eq 0 ]; then
   echo '"PASS"'
   exit 0
