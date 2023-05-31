@@ -66,8 +66,8 @@
     "start": "webpack serve --mode development --env development",
     "prestart": "npm run generate",
     "generate": "dfx generate GoldDIP20 && dfx generate SilverDIP20 && dfx generate faucet && dfx generate internet_identity_div && dfx generate icp_basic_dex_backend",
-    "prettier": "prettier --check --ignore-unknown --no-error-on-unmatched-pattern --ignore-path .prettierignore .",
-    "prettier:fix": "prettier --write --ignore-unknown --no-error-on-unmatched-pattern --ignore-path .prettierignore .",
+    "prettier:check": "prettier --check --ignore-unknown --no-error-on-unmatched-pattern --ignore-path .prettierignore .",
+    "prettier": "prettier --write --ignore-unknown --no-error-on-unmatched-pattern --ignore-path .prettierignore .",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "test": "bash ./scripts/test.sh"

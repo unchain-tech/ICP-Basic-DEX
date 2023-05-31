@@ -34,7 +34,7 @@ jobs:
       - name: lint
         run: npm run lint
       - name: format
-        run: npm run prettier
+        run: npm run prettier:check
 
   contract-test:
     runs-on: ubuntu-latest
