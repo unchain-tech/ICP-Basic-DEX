@@ -19,8 +19,6 @@ jobs:
       - name: Install packages
         if: steps.cache-npm.outputs.cache-hit != 'true'
         run: npm install
-      - name: Install dfx
-        run: DFX_VERSION=0.12.1 sh -ci "$(curl -sSL https://internetcomputer.org/install.sh)"
 
   check:
     runs-on: ubuntu-latest
@@ -45,5 +43,9 @@ jobs:
         with:
           path: '**/node_modules'
           key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dfx
+        run: DFX_VERSION=0.14.0 sh -ci "$(curl -sSL https://internetcomputer.org/install.sh)"
+      - name: Clone DIP20
+        run: git clone https://github.com/Psychedelic/DIP20.git ./src/DIP20
       - name: unit test
         run: npm run test
