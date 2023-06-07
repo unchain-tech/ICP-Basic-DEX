@@ -44,7 +44,7 @@ jobs:
           path: '**/node_modules'
           key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
       - name: Install dfx
-        run: DFX_VERSION=0.14.0 sh -ci "$(curl -sSL https://internetcomputer.org/install.sh)"
+        run: DFX_VERSION=0.14.1 sh -ci "$(curl -sSL https://internetcomputer.org/install.sh)"
       - name: Clone DIP20
         run: git clone https://github.com/Psychedelic/DIP20.git ./src/DIP20
       - name: unit test
