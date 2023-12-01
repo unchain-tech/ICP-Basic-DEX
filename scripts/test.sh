@@ -10,11 +10,11 @@ compare_result() {
 
     if [ "$expect" = "$result" ]; then
         TOTAL_PASSED=$((TOTAL_PASSED + 1))
-        echo "$label: OK"
+        echo "$label ... OK"
         return 0
     else
         TOTAL_FAILED=$((TOTAL_FAILED + 1))
-        echo "$label: ERR"
+        echo "$label ... FAILED"
         diff <(echo $expect) <(echo $result)
         return 1
     fi
@@ -62,6 +62,8 @@ export DEX_PRINCIPAL=$(dfx canister id icp_basic_dex_backend)
 dfx identity use user1
 
 # ===== テスト =====
+echo -e '\nRunning tests...\n'
+
 # user1がトークンを取得する
 echo '===== getToken ====='
 EXPECT="(variant { Ok = 1_000 : nat })"
