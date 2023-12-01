@@ -1,21 +1,24 @@
 #!/bin/bash
 
+TOTAL_PASSED=0
+TOTAL_FAILED=0
+
 compare_result() {
     local label=$1
     local expect=$2
     local result=$3
 
     if [ "$expect" = "$result" ]; then
+        TOTAL_PASSED=$((TOTAL_PASSED + 1))
         echo "$label: OK"
         return 0
     else
+        TOTAL_FAILED=$((TOTAL_FAILED + 1))
         echo "$label: ERR"
         diff <(echo $expect) <(echo $result)
         return 1
     fi
 }
-
-TEST_STATUS=0
 
 # ===== 準備 =====
 dfx stop
@@ -63,22 +66,22 @@ dfx identity use user1
 echo '===== getToken ====='
 EXPECT="(variant { Ok = 1_000 : nat })"
 RESULT=`dfx canister call faucet getToken '(principal '\"$GoldDIP20_PRINCIPAL\"')'` 
-compare_result "return 1_000" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return 1_000" "$EXPECT" "$RESULT"
 
 EXPECT="(variant { Err = variant { AlreadyGiven } })"
 RESULT=`dfx canister call faucet getToken '(principal '\"$GoldDIP20_PRINCIPAL\"')'` 
-compare_result "return Err AlreadyGiven" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return Err AlreadyGiven" "$EXPECT" "$RESULT"
 
 echo '===== deposit ====='
 # approveをコールして、DEXがuser1の代わりにdepositすることを許可する
 dfx canister call GoldDIP20 approve '(principal '\"$DEX_PRINCIPAL\"', 1_000)' > /dev/null
 EXPECT="(variant { Ok = 1_000 : nat })"
 RESULT=`dfx canister call icp_basic_dex_backend deposit '(principal '\"$GoldDIP20_PRINCIPAL\"')'` 
-compare_result "return 1_000" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return 1_000" "$EXPECT" "$RESULT"
 
 EXPECT="(variant { Err = variant { BalanceLow } })"
 RESULT=`dfx canister call icp_basic_dex_backend deposit '(principal '\"$GoldDIP20_PRINCIPAL\"')'` 
-compare_result "return Err BalanceLow" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return Err BalanceLow" "$EXPECT" "$RESULT"
 
 echo '===== placeOrder ====='
 EXPECT='(
@@ -94,7 +97,7 @@ EXPECT='(
   },
 )'
 RESULT=`dfx canister call icp_basic_dex_backend placeOrder '(principal '\"$GoldDIP20_PRINCIPAL\"', 100, principal '\"$SilverDIP20_PRINCIPAL\"', 100)'`
-compare_result "return order details" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return order details" "$EXPECT" "$RESULT"
 
 echo '===== getOrders ====='
 EXPECT='(
@@ -110,22 +113,22 @@ EXPECT='(
   },
 )'
 RESULT=`dfx canister call icp_basic_dex_backend getOrders`
-compare_result "return save order" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return save order" "$EXPECT" "$RESULT"
 
 # 重複するオーダーを出して、エラーが返ってくることを確認する
 EXPECT="(variant { Err = variant { OrderBookFull } })"
 RESULT=`dfx canister call icp_basic_dex_backend placeOrder '(principal '\"$GoldDIP20_PRINCIPAL\"', 100, principal '\"$SilverDIP20_PRINCIPAL\"', 100)'`
-compare_result "return Err OrderBookFull" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return Err OrderBookFull" "$EXPECT" "$RESULT"
 
 echo '===== cancelOrder ====='
 EXPECT="(variant { Ok = 1 : nat32 })"
 RESULT=`dfx canister call icp_basic_dex_backend cancelOrder '(1)'`
-compare_result "return cancel result" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return cancel result" "$EXPECT" "$RESULT"
 
 # 存在しないオーダーの削除を行うと、エラーが返ってくることを確認する
 EXPECT="(variant { Err = variant { NotExistingOrder } })"
 RESULT=`dfx canister call icp_basic_dex_backend cancelOrder '(1)'`
-compare_result "return Err NotExistingOrder" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return Err NotExistingOrder" "$EXPECT" "$RESULT"
 
 # オーダーのオーナーではないユーザーが削除しようとするとエラーを出す
 dfx canister call icp_basic_dex_backend placeOrder '(principal '\"$GoldDIP20_PRINCIPAL\"', 100, principal '\"$SilverDIP20_PRINCIPAL\"', 100)' > /dev/null
@@ -133,7 +136,7 @@ dfx canister call icp_basic_dex_backend placeOrder '(principal '\"$GoldDIP20_PRI
 dfx identity use user2
 EXPECT="(variant { Err = variant { NotAllowed } })"
 RESULT=`dfx canister call icp_basic_dex_backend cancelOrder '(2)'`
-compare_result "return Err NotAllowed" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return Err NotAllowed" "$EXPECT" "$RESULT"
 
 # ===== 取引機能テストの準備 =====
 # オーダーを購入するuser2に切り替える
@@ -149,26 +152,26 @@ dfx canister call icp_basic_dex_backend placeOrder '(principal '\"$SilverDIP20_P
 # 取引が成立してオーダーが削除されていることを確認する
 EXPECT="(vec {})"
 RESULT=`dfx canister call icp_basic_dex_backend getOrders`
-compare_result "return null" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return null" "$EXPECT" "$RESULT"
 
 # トレード後のユーザー残高を確認する
 echo '===== getBalance ====='
 EXPECT="(100 : nat)"
 RESULT=`dfx canister call icp_basic_dex_backend getBalance '(principal '\"$USER2_PRINCIPAL\"', principal '\"$GoldDIP20_PRINCIPAL\"')'`
-compare_result "return 100" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return 100" "$EXPECT" "$RESULT"
 
 EXPECT="(900 : nat)"
 RESULT=`dfx canister call icp_basic_dex_backend getBalance '(principal '\"$USER2_PRINCIPAL\"', principal '\"$SilverDIP20_PRINCIPAL\"')'`
-compare_result "return 900" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return 900" "$EXPECT" "$RESULT"
 
 dfx identity use user1
 EXPECT="(900 : nat)"
 RESULT=`dfx canister call icp_basic_dex_backend getBalance '(principal '\"$USER1_PRINCIPAL\"', principal '\"$GoldDIP20_PRINCIPAL\"')'`
-compare_result "return 900" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return 900" "$EXPECT" "$RESULT"
 
 EXPECT="(100 : nat)"
 RESULT=`dfx canister call icp_basic_dex_backend getBalance '(principal '\"$USER1_PRINCIPAL\"', principal '\"$SilverDIP20_PRINCIPAL\"')'`
-compare_result "return 100" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return 100" "$EXPECT" "$RESULT"
 
 echo '===== withdraw ====='
 # [GoldDIP20 500 -> SilverDIP20 500]のオーダーを出す
@@ -177,17 +180,17 @@ dfx canister call icp_basic_dex_backend placeOrder '(principal '\"$GoldDIP20_PRI
 
 EXPECT="(variant { Ok = 500 : nat })"
 RESULT=`dfx canister call icp_basic_dex_backend withdraw '(principal '\"$GoldDIP20_PRINCIPAL\"', 500)'`
-compare_result "return 500" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return 500" "$EXPECT" "$RESULT"
 
 # オーダーが削除されていることを確認する
 EXPECT="(vec {})"
 RESULT=`dfx canister call icp_basic_dex_backend getOrders`
-compare_result "return (vec {})" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return (vec {})" "$EXPECT" "$RESULT"
 
 # 残高以上の引き出しを行う
 EXPECT="(variant { Err = variant { BalanceLow } })"
 RESULT=`dfx canister call icp_basic_dex_backend withdraw '(principal '\"$GoldDIP20_PRINCIPAL\"', 1000)'`
-compare_result "return Err BalanceLow" "$EXPECT" "$RESULT" || TEST_STATUS=1
+compare_result "return Err BalanceLow" "$EXPECT" "$RESULT"
 
 # ===== 後始末 =====
 dfx identity use default
@@ -197,10 +200,10 @@ dfx stop
 
 # ===== テスト結果の確認 =====
 echo '===== Result ====='
-if [ $TEST_STATUS -eq 0 ]; then
-  echo '"PASS"'
+if [ $TOTAL_FAILED -eq 0 ]; then
+  echo "PASSED. $TOTAL_PASSED passed, $TOTAL_FAILED failed."
   exit 0
 else
-  echo '"FAIL"'
+  echo "FAILED. $TOTAL_PASSED passed, $TOTAL_FAILED failed."
   exit 1
 fi
