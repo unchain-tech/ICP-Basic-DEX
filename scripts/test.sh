@@ -67,22 +67,22 @@ echo -e '\nRunning tests...\n'
 # user1がトークンを取得する
 echo '===== getToken ====='
 EXPECT="(variant { Ok = 1_000 : nat })"
-RESULT=`dfx canister call faucet getToken '(principal '\"$GoldDIP20_PRINCIPAL\"')'` 
+RESULT=`dfx canister call faucet getToken '(principal '\"$GoldDIP20_PRINCIPAL\"')'`
 compare_result "return 1_000" "$EXPECT" "$RESULT"
 
 EXPECT="(variant { Err = variant { AlreadyGiven } })"
-RESULT=`dfx canister call faucet getToken '(principal '\"$GoldDIP20_PRINCIPAL\"')'` 
+RESULT=`dfx canister call faucet getToken '(principal '\"$GoldDIP20_PRINCIPAL\"')'`
 compare_result "return Err AlreadyGiven" "$EXPECT" "$RESULT"
 
 echo '===== deposit ====='
 # approveをコールして、DEXがuser1の代わりにdepositすることを許可する
 dfx canister call GoldDIP20 approve '(principal '\"$DEX_PRINCIPAL\"', 1_000)' > /dev/null
 EXPECT="(variant { Ok = 1_000 : nat })"
-RESULT=`dfx canister call icp_basic_dex_backend deposit '(principal '\"$GoldDIP20_PRINCIPAL\"')'` 
+RESULT=`dfx canister call icp_basic_dex_backend deposit '(principal '\"$GoldDIP20_PRINCIPAL\"')'`
 compare_result "return 1_000" "$EXPECT" "$RESULT"
 
 EXPECT="(variant { Err = variant { BalanceLow } })"
-RESULT=`dfx canister call icp_basic_dex_backend deposit '(principal '\"$GoldDIP20_PRINCIPAL\"')'` 
+RESULT=`dfx canister call icp_basic_dex_backend deposit '(principal '\"$GoldDIP20_PRINCIPAL\"')'`
 compare_result "return Err BalanceLow" "$EXPECT" "$RESULT"
 
 echo '===== placeOrder ====='
